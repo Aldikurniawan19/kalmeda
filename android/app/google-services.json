@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "842242655273",
+    "project_id": "menstracker-a2a40",
+    "storage_bucket": "menstracker-a2a40.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:842242655273:android:d88d320eccc5ba65178838",
+        "android_client_info": {
+          "package_name": "com.menstracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDHbawT8f4OKLLl44SzY_PTtQha2uGEPno"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
