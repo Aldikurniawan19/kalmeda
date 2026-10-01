@@ -27,7 +27,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'gradle'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -35,7 +34,7 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Verify Flutter & Environment
+      - name: Verify Flutter Environment
         run: flutter doctor -v
 
       - name: Install dependencies
@@ -48,16 +47,17 @@ jobs:
         run: flutter test test/core/services/notification_reminder_test.dart
 
       - name: Build Android Release APK
-        run: flutter build apk --release --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+        run: flutter build apk --release
 
       - name: Build Android App Bundle (AAB)
-        run: flutter build appbundle --release --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+        run: flutter build appbundle --release
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Kalmeda-APK-Release
           path: build/app/outputs/flutter-apk/*.apk
+          if-no-files-found: warn
           retention-days: 30
 
       - name: Upload App Bundle (AAB) Artifact
@@ -65,4 +65,5 @@ jobs:
         with:
           name: Kalmeda-AAB-Release
           path: build/app/outputs/bundle/release/*.aab
+          if-no-files-found: warn
           retention-days: 30

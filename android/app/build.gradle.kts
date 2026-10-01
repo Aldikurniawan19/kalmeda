@@ -32,42 +32,12 @@ android {
 
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Signing with debug keys for release build so `flutter build apk --release` produces an installable APK
             signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-        }
-    }
-
-    applicationVariants.all {
-        val variantName = name
-        outputs.all {
-            val output = this as? com.android.build.gradle.internal.api.BaseVariantOutputImpl
-            if (output != null && variantName == "release") {
-                output.outputFileName = "Kalmeda.apk"
-            }
-        }
-
-        if (variantName == "release") {
-            assembleProvider.configure {
-                doLast {
-                    val buildDir = layout.buildDirectory.asFile.get()
-                    val flutterApkDir = File(buildDir, "outputs/flutter-apk")
-                    val apkReleaseDir = File(buildDir, "outputs/apk/release")
-                    val kalmedaInRelease = File(apkReleaseDir, "Kalmeda.apk")
-                    val appReleaseInFlutter = File(flutterApkDir, "app-release.apk")
-
-                    flutterApkDir.mkdirs()
-                    if (kalmedaInRelease.exists()) {
-                        kalmedaInRelease.copyTo(File(flutterApkDir, "Kalmeda.apk"), overwrite = true)
-                    } else if (appReleaseInFlutter.exists()) {
-                        appReleaseInFlutter.copyTo(File(flutterApkDir, "Kalmeda.apk"), overwrite = true)
-                    }
-                }
-            }
         }
     }
 }
