@@ -48,10 +48,10 @@ jobs:
         run: flutter test test/core/services/notification_reminder_test.dart
 
       - name: Build Android Release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
 
       - name: Build Android App Bundle (AAB)
-        run: flutter build appbundle --release
+        run: flutter build appbundle --release --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4

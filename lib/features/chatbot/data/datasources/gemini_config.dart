@@ -2,9 +2,10 @@
 /// Contains API credentials, model parameters, and resilience timeout configurations.
 class GeminiConfig {
   /// Google Gemini API Key obtained from Google AI Studio (https://aistudio.google.com/).
-  /// Paste your API key here (starts with AIzaSy...).
-  static const String apiKey =
-      'AQ.Ab8RN6LYv9Xl9vBysUVvtO4NppmTsqRfZgkp--Hb0h_aqCThLg';
+  static const String apiKey = String.fromEnvironment(
+    'GEMINI_API_KEY',
+    defaultValue: 'AQ.Ab8RN6LYv9Xl9vBysUVvtO4NppmTsqRfZgkp--Hb0h_aqCThLg',
+  );
 
   /// Default model identifier.
   /// Prioritized to gemini-3.1-flash-lite-preview.
