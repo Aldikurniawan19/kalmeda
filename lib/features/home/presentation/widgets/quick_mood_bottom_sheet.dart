@@ -3,25 +3,27 @@ import 'package:menstracker/core/constants/app_colors.dart';
 import 'package:menstracker/core/constants/app_sizes.dart';
 import 'package:menstracker/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:menstracker/features/home/presentation/controllers/home_controller.dart';
-import 'package:menstracker/features/record/data/datasources/record_remote_data_source.dart';
 import 'package:menstracker/features/record/data/models/cycle_record_model.dart';
+import 'package:menstracker/features/record/data/repositories/record_repository_impl.dart';
+import 'package:menstracker/features/record/domain/repositories/record_repository.dart';
 import 'package:menstracker/features/record/presentation/controllers/daily_checkin_service.dart';
 
 /// Quick mood logger and emotional health guidance bottom sheet.
 class QuickMoodBottomSheet extends StatefulWidget {
   final VoidCallback? onOpenFullRecord;
 
-  const QuickMoodBottomSheet({
-    super.key,
-    this.onOpenFullRecord,
-  });
+  const QuickMoodBottomSheet({super.key, this.onOpenFullRecord});
 
-  static Future<void> show(BuildContext context, {VoidCallback? onOpenFullRecord}) {
+  static Future<void> show(
+    BuildContext context, {
+    VoidCallback? onOpenFullRecord,
+  }) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => QuickMoodBottomSheet(onOpenFullRecord: onOpenFullRecord),
+      builder: (context) =>
+          QuickMoodBottomSheet(onOpenFullRecord: onOpenFullRecord),
     );
   }
 
@@ -30,7 +32,7 @@ class QuickMoodBottomSheet extends StatefulWidget {
 }
 
 class _QuickMoodBottomSheetState extends State<QuickMoodBottomSheet> {
-  final _recordDataSource = RecordRemoteDataSourceImpl();
+  final RecordRepository _recordRepository = RecordRepositoryImpl();
   int _selectedMood = 0;
   bool _isSaving = false;
 
@@ -39,37 +41,43 @@ class _QuickMoodBottomSheetState extends State<QuickMoodBottomSheet> {
       'name': 'Bahagia',
       'icon': 'assets/icon/iconBahagia.png',
       'bg': AppColors.moodBahagiaBg,
-      'tip': 'Energi estrogen dan serotonin sedang optimal. Manfaatkan untuk aktivitas produktif dan kreatif!',
+      'tip':
+          'Energi estrogen dan serotonin sedang optimal. Manfaatkan untuk aktivitas produktif dan kreatif!',
     },
     {
       'name': 'Tenang',
       'icon': 'assets/icon/iconTenang.png',
       'bg': AppColors.moodTenangBg,
-      'tip': 'Kondisi emosi stabil. Pertahankan ritme ini dengan meditasi ringan dan asupan makanan seimbang.',
+      'tip':
+          'Kondisi emosi stabil. Pertahankan ritme ini dengan meditasi ringan dan asupan makanan seimbang.',
     },
     {
       'name': 'Sedih',
       'icon': 'assets/icon/iconSedih.png',
       'bg': AppColors.moodSedihBg,
-      'tip': 'Fluktuasi progesteron wajar memicu emosi meluap. Istirahat sejenak dan dengarkan musik santai.',
+      'tip':
+          'Fluktuasi progesteron wajar memicu emosi meluap. Istirahat sejenak dan dengarkan musik santai.',
     },
     {
       'name': 'Lelah',
       'icon': 'assets/icon/iconLelah.png',
       'bg': AppColors.moodLelahBg,
-      'tip': 'Tubuh membutuhkan waktu pemulihan energi. Tidur cukup 7–8 jam dan kurangi beban fisik berat.',
+      'tip':
+          'Tubuh membutuhkan waktu pemulihan energi. Tidur cukup 7–8 jam dan kurangi beban fisik berat.',
     },
     {
       'name': 'Nyeri',
       'icon': 'assets/icon/iconNyeri.png',
       'bg': AppColors.moodNyeriBg,
-      'tip': 'Gunakan kompres hangat di area panggul dan konsumsi air hangat untuk meredakan kram otot.',
+      'tip':
+          'Gunakan kompres hangat di area panggul dan konsumsi air hangat untuk meredakan kram otot.',
     },
     {
       'name': 'Kembung',
       'icon': 'assets/icon/iconKembung.png',
       'bg': AppColors.moodKembungBg,
-      'tip': 'Kurangi asupan garam dan perbanyak buah kaya kalium (pisang, pepaya) untuk menstabilkan cairan.',
+      'tip':
+          'Kurangi asupan garam dan perbanyak buah kaya kalium (pisang, pepaya) untuk menstabilkan cairan.',
     },
   ];
 
@@ -100,9 +108,10 @@ class _QuickMoodBottomSheetState extends State<QuickMoodBottomSheet> {
 
     try {
       final now = DateTime.now();
-      final existing = await _recordDataSource.getRecordByDate(now);
+      final existing = await _recordRepository.getRecordByDate(now);
 
-      final isPeriod = HomeController().cycleOverview?.isPeriodActive == true ||
+      final isPeriod =
+          HomeController().cycleOverview?.isPeriodActive == true ||
           HomeController().cycleOverview?.isPeriodProlonged == true;
       final defaultFlow = isPeriod ? 3 : 0;
 
@@ -119,7 +128,7 @@ class _QuickMoodBottomSheetState extends State<QuickMoodBottomSheet> {
         createdAt: existing?.createdAt ?? DateTime.now(),
       );
 
-      await _recordDataSource.saveRecord(record);
+      await _recordRepository.saveRecord(record);
       DailyCheckinService().markCurrentSlotCompleted();
       DailyCheckinService().syncDailyInactivityNotification();
       await HomeController().loadData();
@@ -129,8 +138,10 @@ class _QuickMoodBottomSheetState extends State<QuickMoodBottomSheet> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Mood "${_moods[_selectedMood]['name']}" berhasil dicatat untuk hari ini.'),
-          backgroundColor: AppColors.primary,
+          content: Text(
+            'Mood "${_moods[_selectedMood]['name']}" berhasil dicatat untuk hari ini.',
+          ),
+          backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -245,7 +256,9 @@ class _QuickMoodBottomSheetState extends State<QuickMoodBottomSheet> {
                       boxShadow: isSelected
                           ? [
                               BoxShadow(
-                                color: AppColors.primary.withValues(alpha: 0.25),
+                                color: AppColors.primary.withValues(
+                                  alpha: 0.25,
+                                ),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2),
                               ),
@@ -266,7 +279,9 @@ class _QuickMoodBottomSheetState extends State<QuickMoodBottomSheet> {
                           m['name'] as String,
                           style: TextStyle(
                             fontSize: 10,
-                            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
                             color: AppColors.textPrimary,
                           ),
                         ),
@@ -342,9 +357,13 @@ class _QuickMoodBottomSheetState extends State<QuickMoodBottomSheet> {
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primary,
                       side: const BorderSide(color: Color(0xFFFFB8CC)),
-                      padding: const EdgeInsets.symmetric(vertical: AppSizes.space14),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSizes.space14,
+                      ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusLarge,
+                        ),
                       ),
                     ),
                     child: const Text(
@@ -363,9 +382,13 @@ class _QuickMoodBottomSheetState extends State<QuickMoodBottomSheet> {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: AppSizes.space14),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSizes.space14,
+                      ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusLarge,
+                        ),
                       ),
                     ),
                     child: Text(

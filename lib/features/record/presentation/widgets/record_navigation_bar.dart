@@ -4,8 +4,8 @@ import 'package:menstracker/core/constants/app_colors.dart';
 import 'package:menstracker/core/constants/app_sizes.dart';
 
 /// Bottom action navigation bar for multi-step record flow.
-/// Adheres strictly to `aturan-desain.md` and `aturan-penulisan-code.md`.
-class RecordNavigationBar extends StatelessWidget {
+/// Features an icon-only back button and a morphing save button with scale animation.
+class RecordNavigationBar extends StatefulWidget {
   final int currentStep;
   final int totalSteps;
   final bool isSaving;
@@ -24,9 +24,35 @@ class RecordNavigationBar extends StatelessWidget {
   });
 
   @override
+  State<RecordNavigationBar> createState() => _RecordNavigationBarState();
+}
+
+class _RecordNavigationBarState extends State<RecordNavigationBar> {
+  bool _isPressed = false;
+
+  void _handleTapDown(TapDownDetails details) {
+    if (!widget.isSaving) {
+      setState(() => _isPressed = true);
+    }
+  }
+
+  void _handleTapUp(TapUpDetails details) {
+    if (_isPressed) {
+      setState(() => _isPressed = false);
+    }
+  }
+
+  void _handleTapCancel() {
+    if (_isPressed) {
+      setState(() => _isPressed = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final bool isFirstStep = currentStep == 0;
-    final bool isLastStep = currentStep == totalSteps - 1;
+    final bool isFirstStep = widget.currentStep == 0;
+    final bool isLastStep = widget.currentStep == widget.totalSteps - 1;
+    const double buttonHeight = 48.0;
 
     return Container(
       padding: const EdgeInsets.symmetric(
@@ -53,110 +79,140 @@ class RecordNavigationBar extends StatelessWidget {
         top: false,
         child: Row(
           children: [
-            // Back Button (shown on steps > 0)
+            // Back Button (Icon-only, shown on steps > 0)
             if (!isFirstStep) ...[
-              Expanded(
-                flex: 2,
-                child: OutlinedButton.icon(
-                  onPressed: isSaving ? null : onPrevious,
-                  icon: const Icon(
-                    Icons.arrow_back_rounded,
-                    size: 18,
-                    color: AppColors.textSecondary,
-                  ),
-                  label: const Text(
-                    'Kembali',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
+              SizedBox(
+                width: buttonHeight,
+                height: buttonHeight,
+                child: OutlinedButton(
+                  onPressed: widget.isSaving ? null : widget.onPrevious,
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: AppSizes.space14),
+                    padding: EdgeInsets.zero,
+                    foregroundColor: AppColors.textPrimary,
                     side: const BorderSide(color: Color(0xFFE4DFE4)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
                     ),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    size: 18,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
               const SizedBox(width: AppSizes.space12),
             ],
 
-            // Next or Save CTA
+            // Next / Save CTA with morphing loading animation
             Expanded(
-              flex: isFirstStep ? 1 : 3,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: isSaving ? null : (isLastStep ? onSave : onNext),
-                  borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: AppSizes.space14),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFFFF507A),
-                          Color(0xFFFF6E94),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFFF4D79).withValues(alpha: 0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (isLastStep) ...[
-                          if (isSaving)
-                            const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.textWhite,
+              child: Center(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final fullWidth = constraints.maxWidth;
+                    final targetWidth =
+                        (isLastStep && widget.isSaving) ? buttonHeight : fullWidth;
+
+                    return AnimatedScale(
+                      scale: _isPressed ? 0.96 : 1.0,
+                      duration: const Duration(milliseconds: 120),
+                      curve: Curves.easeOutCubic,
+                      child: GestureDetector(
+                        onTapDown: _handleTapDown,
+                        onTapUp: _handleTapUp,
+                        onTapCancel: _handleTapCancel,
+                        onTap: widget.isSaving
+                            ? null
+                            : (isLastStep ? widget.onSave : widget.onNext),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 320),
+                          curve: Curves.easeInOutCubic,
+                          width: targetWidth,
+                          height: buttonHeight,
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [
+                                Color(0xFFFF507A),
+                                Color(0xFFFF6E94),
+                              ],
+                            ),
+                            borderRadius: BorderRadius.circular(
+                              (isLastStep && widget.isSaving)
+                                  ? buttonHeight / 2
+                                  : AppSizes.radiusMedium,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFFF4D79).withValues(
+                                  alpha: widget.isSaving ? 0.20 : 0.32,
+                                ),
+                                blurRadius: widget.isSaving ? 8 : 12,
+                                offset: Offset(0, widget.isSaving ? 3 : 5),
                               ),
-                            )
-                          else
-                            const Icon(
-                              Icons.check_circle_outline_rounded,
-                              size: 18,
-                              color: AppColors.textWhite,
-                            ),
-                          const SizedBox(width: AppSizes.space8),
-                          Text(
-                            isSaving ? 'Menyimpan...' : 'Simpan Catatan',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textWhite,
+                            ],
+                          ),
+                          child: Center(
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 200),
+                              child: (isLastStep && widget.isSaving)
+                                  ? const SizedBox(
+                                      key: ValueKey('saving_spinner'),
+                                      width: 22,
+                                      height: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.4,
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                          AppColors.textWhite,
+                                        ),
+                                      ),
+                                    )
+                                  : Row(
+                                      key: ValueKey<int>(widget.currentStep),
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        if (isLastStep) ...[
+                                          const Icon(
+                                            Icons.check_circle_outline_rounded,
+                                            size: 18,
+                                            color: AppColors.textWhite,
+                                          ),
+                                          const SizedBox(width: AppSizes.space8),
+                                          const Text(
+                                            'Simpan Catatan',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppColors.textWhite,
+                                              letterSpacing: -0.2,
+                                            ),
+                                          ),
+                                        ] else ...[
+                                          Text(
+                                            isFirstStep
+                                                ? 'Lanjut ke Gejala'
+                                                : 'Lanjut ke Catatan',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w700,
+                                              color: AppColors.textWhite,
+                                              letterSpacing: -0.2,
+                                            ),
+                                          ),
+                                          const SizedBox(width: AppSizes.space6),
+                                          const Icon(
+                                            Icons.arrow_forward_ios_rounded,
+                                            size: 14,
+                                            color: AppColors.textWhite,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
                             ),
                           ),
-                        ] else ...[
-                          Text(
-                            isFirstStep ? 'Lanjut ke Gejala' : 'Lanjut ke Catatan',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textWhite,
-                            ),
-                          ),
-                          const SizedBox(width: AppSizes.space6),
-                          const Icon(
-                            Icons.arrow_forward_rounded,
-                            size: 18,
-                            color: AppColors.textWhite,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),

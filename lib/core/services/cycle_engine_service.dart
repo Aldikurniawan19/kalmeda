@@ -138,9 +138,8 @@ class CycleEngineService {
     DateTime currentCycleStartDate;
 
     if (totalElapsedDays >= 0) {
-      final cycleCount = totalElapsedDays ~/ cycleLength;
-      currentCycleDay = (totalElapsedDays % cycleLength) + 1;
-      currentCycleStartDate = lmp.add(Duration(days: cycleCount * cycleLength));
+      currentCycleDay = totalElapsedDays + 1;
+      currentCycleStartDate = lmp;
     } else {
       // Reference date is prior to LMP
       final daysBefore = -totalElapsedDays;
@@ -150,12 +149,12 @@ class CycleEngineService {
       currentCycleDay = (diff % cycleLength) + 1;
     }
 
-    final nextPeriodDate = currentCycleStartDate.add(Duration(days: cycleLength));
+    final nextPeriodDate = lmp.add(Duration(days: cycleLength));
     final daysUntilNextPeriod = nextPeriodDate.difference(today).inDays;
 
     // Standard medical ovulation occurs 14 days prior to next period
     final ovulationDayNumber = (cycleLength - 14).clamp(1, cycleLength - 1);
-    final ovulationDate = currentCycleStartDate.add(Duration(days: ovulationDayNumber - 1));
+    final ovulationDate = lmp.add(Duration(days: ovulationDayNumber - 1));
     final fertileWindowStart = ovulationDate.subtract(const Duration(days: 5));
     final fertileWindowEnd = ovulationDate;
 
@@ -175,17 +174,19 @@ class CycleEngineService {
         !today.isBefore(DateFormatter.dateOnly(profile.lastPeriodEndDate!));
 
     final isPeriodActive = !isPeriodEnded &&
-        currentCycleDay <= periodDuration &&
-        totalElapsedDays < (cycleLength + 10);
+        totalElapsedDays >= 0 &&
+        totalElapsedDays < periodDuration;
     final isPeriodProlonged = !isPeriodEnded &&
-        currentCycleDay > periodDuration &&
-        currentCycleDay <= (periodDuration + 3).clamp(7, 9) &&
+        totalElapsedDays >= periodDuration &&
+        totalElapsedDays < (periodDuration + 3).clamp(7, 9) &&
         totalElapsedDays < 10;
     final prolongedDays = isPeriodProlonged ? (currentCycleDay - periodDuration) : 0;
 
-    // Period confirmation check: within 2 days of predicted date or overdue
+    // Period confirmation check: starts at H-2 (2 days before predicted date) and remains due until confirmed
     final isPeriodStartConfirmationDue = !isPeriodActive &&
-        ((daysUntilNextPeriod <= 2 && daysUntilNextPeriod >= -4) || (totalElapsedDays >= cycleLength));
+        !isPeriodProlonged &&
+        totalElapsedDays >= periodDuration &&
+        daysUntilNextPeriod <= 2;
 
     if (isPeriodActive) {
       countdownTitle = 'Hari ke-$currentCycleDay';
@@ -193,15 +194,19 @@ class CycleEngineService {
     } else if (isPeriodProlonged) {
       countdownTitle = 'Hari ke-$currentCycleDay';
       countdownSubtitle = 'Haid +$prolongedDays hari dari target';
+    } else if (daysUntilNextPeriod > 1) {
+      countdownTitle = '$daysUntilNextPeriod hari lagi';
+      countdownSubtitle = 'Perkiraan menstruasi berikutnya';
     } else if (daysUntilNextPeriod == 1) {
       countdownTitle = '1 hari lagi';
       countdownSubtitle = 'Perkiraan menstruasi berikutnya';
-    } else if (daysUntilNextPeriod <= 0) {
+    } else if (daysUntilNextPeriod == 0) {
       countdownTitle = 'Hari ini';
       countdownSubtitle = 'Perkiraan menstruasi dimulai';
     } else {
-      countdownTitle = '$daysUntilNextPeriod hari lagi';
-      countdownSubtitle = 'Perkiraan menstruasi berikutnya';
+      final lateDays = -daysUntilNextPeriod;
+      countdownTitle = 'Terlambat $lateDays hari';
+      countdownSubtitle = 'Menstruasi belum tercatat';
     }
 
     const prolongedAdvice =
@@ -285,7 +290,11 @@ class CycleEngineService {
         !profile.lastPeriodEndDate!.isBefore(lmp) &&
         !target.isBefore(DateFormatter.dateOnly(profile.lastPeriodEndDate!));
 
-    if (cycleDay <= periodDuration && !isPeriodEnded) {
+    final isFuture = target.isAfter(DateFormatter.dateOnly(DateTime.now()));
+    final isWithinRecordedPeriod = totalElapsedDays >= 0 && totalElapsedDays < periodDuration;
+    final isProjectedFuturePeriod = isFuture && cycleDay <= periodDuration;
+
+    if ((isWithinRecordedPeriod && !isPeriodEnded) || isProjectedFuturePeriod) {
       phase = CyclePhase.menstrual;
       phaseName = 'Fase Menstruasi';
       phaseShortDescription = 'Pelepasan dinding rahim dan penurunan hormon estrogen.';
@@ -298,7 +307,7 @@ class CycleEngineService {
       nutritionTip = 'Konsumsi makanan kaya zat besi (bayam, daging merah, hati) dan minuman hangat untuk mencegah lemas.';
       physicalTip = 'Peregangan ringan, jalan santai, atau yoga restoratif. Hindari olahraga dengan intensitas berlebih.';
       moodTip = 'Berikan ruang untuk istirahat. Sensitivitas atau rasa lelah adalah respon alami penurunan hormon.';
-    } else if (cycleDay < fertileStartDay || (cycleDay <= periodDuration && isPeriodEnded)) {
+    } else if (cycleDay < fertileStartDay && totalElapsedDays < cycleLength) {
       phase = CyclePhase.follicular;
       phaseName = 'Fase Folikuler';
       phaseShortDescription = 'Peningkatan hormon estrogen dan pematangan folikel telur.';
@@ -310,7 +319,7 @@ class CycleEngineService {
       nutritionTip = 'Penuhi asupan protein berkualitas, sayuran hijau segar, dan makanan fermentasi untuk mendukung metabolisme estrogen.';
       physicalTip = 'Waktu terbaik untuk meningkatkan intensitas olahraga (kardio, latihan beban) karena stamina sedang meningkat.';
       moodTip = 'Energi dan rasa percaya diri cenderung berada di puncak. Bagus untuk menyelesaikan tugas yang membutuhkan konsentrasi tinggi.';
-    } else if (cycleDay < ovulationDay) {
+    } else if (cycleDay < ovulationDay && totalElapsedDays < cycleLength) {
       phase = CyclePhase.fertileWindow;
       phaseName = 'Masa Subur';
       phaseShortDescription = 'Jendela kesuburan tinggi menjelang pelepasan sel telur.';
@@ -323,7 +332,7 @@ class CycleEngineService {
       nutritionTip = 'Konsumsi antioksidan tinggi (buah beri, kacang-kacangan, alpukat) dan hidrasi yang cukup untuk mendukung kualitas lendir serviks.';
       physicalTip = 'Stamina sangat optimal. Latihan kardio, HIIT, atau aktivitas luar ruangan sangat cocok dilakukan.';
       moodTip = 'Daya tarik, energi sosial, dan motivasi diri berada pada fase optimal.';
-    } else if (cycleDay == ovulationDay) {
+    } else if (cycleDay == ovulationDay && totalElapsedDays < cycleLength) {
       phase = CyclePhase.ovulation;
       phaseName = 'Hari Ovulasi';
       phaseShortDescription = 'Pelepasan sel telur matang dari ovarium (puncak fertilitas).';
@@ -337,7 +346,7 @@ class CycleEngineService {
       nutritionTip = 'Makanan anti-inflamasi seperti kunyit, salmon, dan sayuran berserat tinggi untuk mendukung ovulasi sehat.';
       physicalTip = 'Pertahankan aktivitas fisik teratur. Beberapa wanita merasakan sedikit sensasi kram ovulasi (mittelschmerz).';
       moodTip = 'Perasaan positif dan energi mencapai puncak siklus.';
-    } else if (cycleDay < pmsStartDay) {
+    } else if (cycleDay < pmsStartDay && totalElapsedDays < cycleLength) {
       phase = CyclePhase.luteal;
       phaseName = 'Fase Luteal';
       phaseShortDescription = 'Korpus luteum memproduksi hormon progesteron.';

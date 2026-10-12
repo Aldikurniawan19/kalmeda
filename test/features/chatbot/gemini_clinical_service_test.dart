@@ -70,5 +70,35 @@ void main() {
         expect(botMsg.symptomIndices, contains(0)); // 0 = Kram Perut
       },
     );
+
+    test(
+      'ChatbotController handles multi-turn chained follow-up "apakah itu aman?" seamlessly',
+      () async {
+        final controller = ChatbotController();
+        controller.clearChat();
+
+        // Turn 1: Late period inquiry
+        await controller.sendMessage('kenapa mens telat pada bulan ini');
+        expect(controller.messages.length, equals(3)); // welcome + user1 + bot1
+
+        final firstBotMsg = controller.messages.last;
+        expect(firstBotMsg.isUser, isFalse);
+        expect(firstBotMsg.text, contains('keterlambatan siklus haid'));
+
+        // Turn 2: Follow-up referring to "itu" (the late period)
+        await controller.sendMessage('apakah itu aman?');
+        expect(controller.messages.length, equals(5)); // welcome + user1 + bot1 + user2 + bot2
+
+        final secondBotMsg = controller.messages.last;
+        expect(secondBotMsg.isUser, isFalse);
+        // Must correctly resolve referral context to late period safety analysis
+        expect(
+          secondBotMsg.text,
+          contains('keterlambatan siklus haid tersebut aman atau berbahaya'),
+        );
+        expect(secondBotMsg.text, contains('2 hingga 7 hari'));
+        expect(secondBotMsg.text, contains('Langkah-langkah penanganan mandiri'));
+      },
+    );
   });
 }

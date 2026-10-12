@@ -7,10 +7,7 @@ import 'package:menstracker/core/constants/app_text_styles.dart';
 class InsightHeader extends StatelessWidget {
   final VoidCallback? onBack;
 
-  const InsightHeader({
-    super.key,
-    this.onBack,
-  });
+  const InsightHeader({super.key, this.onBack});
 
   @override
   Widget build(BuildContext context) {
@@ -44,10 +41,7 @@ class InsightHeader extends StatelessWidget {
         ),
 
         // Title
-        const Text(
-          'Insight',
-          style: AppTextStyles.heading2,
-        ),
+        const Text('Insight', style: AppTextStyles.heading2),
 
         // Calendar button
         Container(

@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:menstracker/core/services/cycle_engine_service.dart';
 import 'package:menstracker/core/utils/date_formatter.dart';
+import 'package:menstracker/features/home/data/services/confirmed_period_storage.dart';
 import 'package:menstracker/features/period_setup/data/models/cycle_profile_model.dart';
 import 'package:menstracker/features/profile/data/models/user_profile_data.dart';
 import 'package:menstracker/features/profile/data/repositories/profile_repository_impl.dart';
 import 'package:menstracker/features/profile/domain/repositories/profile_repository.dart';
-import 'package:menstracker/features/record/data/datasources/record_remote_data_source.dart';
 import 'package:menstracker/features/record/data/models/cycle_record_model.dart';
+import 'package:menstracker/features/record/data/repositories/record_repository_impl.dart';
+import 'package:menstracker/features/record/domain/repositories/record_repository.dart';
 
 /// Central state management controller powering dynamic Home, Calendar, and Insight modules.
 class HomeController extends ChangeNotifier {
@@ -14,16 +16,16 @@ class HomeController extends ChangeNotifier {
   factory HomeController() => _instance;
 
   final ProfileRepository _profileRepository;
-  final RecordRemoteDataSource _recordDataSource;
+  final RecordRepository _recordRepository;
   final CycleEngineService _engine;
 
   HomeController._internal({
     ProfileRepository? profileRepository,
-    RecordRemoteDataSource? recordDataSource,
+    RecordRepository? recordRepository,
     CycleEngineService? engine,
-  })  : _profileRepository = profileRepository ?? ProfileRepositoryImpl(),
-        _recordDataSource = recordDataSource ?? RecordRemoteDataSourceImpl(),
-        _engine = engine ?? CycleEngineService();
+  }) : _profileRepository = profileRepository ?? ProfileRepositoryImpl(),
+       _recordRepository = recordRepository ?? RecordRepositoryImpl(),
+       _engine = engine ?? CycleEngineService();
 
   bool _isLoading = false;
   String? _errorMessage;
@@ -35,7 +37,11 @@ class HomeController extends ChangeNotifier {
 
   // Calendar interaction state
   DateTime _selectedDate = DateFormatter.dateOnly(DateTime.now());
-  DateTime _displayedMonth = DateTime(DateTime.now().year, DateTime.now().month, 1);
+  DateTime _displayedMonth = DateTime(
+    DateTime.now().year,
+    DateTime.now().month,
+    1,
+  );
   CycleDayInfo? _selectedDayInfo;
   CycleRecordModel? _selectedDateRecord;
   CycleRecordModel? _todayRecord;
@@ -57,7 +63,8 @@ class HomeController extends ChangeNotifier {
   /// Returns whether the user has already recorded/checked in their condition today.
   bool get hasCheckinToday {
     final today = DateFormatter.dateOnly(DateTime.now());
-    if (_todayRecord != null && DateFormatter.dateOnly(_todayRecord!.date) == today) {
+    if (_todayRecord != null &&
+        DateFormatter.dateOnly(_todayRecord!.date) == today) {
       return true;
     }
     return _monthRecords.any((r) => DateFormatter.dateOnly(r.date) == today);
@@ -76,6 +83,14 @@ class HomeController extends ChangeNotifier {
       final profile = await _profileRepository.getUserProfile();
       _userProfile = profile;
 
+      // Seed initial period from profile into confirmed period storage if empty
+      ConfirmedPeriodStorage.seedInitialPeriod(
+        userId: profile.uid,
+        startDate: profile.cycleProfile.lastPeriodDate,
+        endDate: profile.cycleProfile.lastPeriodEndDate,
+        durationDays: profile.cycleProfile.periodDuration,
+      ).catchError((_) {});
+
       _cycleOverview = _engine.calculateOverview(
         profile: profile.cycleProfile,
         referenceDate: DateTime.now(),
@@ -86,6 +101,14 @@ class HomeController extends ChangeNotifier {
         targetDate: _selectedDate,
       );
 
+      // Synchronize full cloud records into local storage in background
+      _recordRepository.syncAllFromCloud().then((_) {
+        _fetchRecordsForMonth(_displayedMonth.year, _displayedMonth.month);
+        _fetchRecordForSelectedDate();
+        _fetchRecordForToday();
+        notifyListeners();
+      }).catchError((_) {});
+
       await _fetchRecordsForMonth(_displayedMonth.year, _displayedMonth.month);
       await _fetchRecordForSelectedDate();
       await _fetchRecordForToday();
@@ -94,21 +117,33 @@ class HomeController extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       _isLoading = false;
-      // Fallback default profile if unauthenticated or new
-      final fallbackCycle = CycleProfileModel(
-        trackingGoal: 'predict_period',
-        lastPeriodDate: DateTime.now().subtract(const Duration(days: 7)),
-        cycleLength: 28,
-        periodDuration: 5,
-        regularity: 'regular',
-        birthDate: DateTime(2000, 1, 1),
-      );
+      // If we already have a loaded profile in memory, preserve it
+      if (_userProfile != null) {
+        _cycleOverview = _engine.calculateOverview(
+          profile: _userProfile!.cycleProfile,
+          referenceDate: DateTime.now(),
+        );
+        _selectedDayInfo = _engine.calculateDayInfo(
+          profile: _userProfile!.cycleProfile,
+          targetDate: _selectedDate,
+        );
+      } else {
+        // Fallback default profile only if absolutely no data exists
+        final fallbackCycle = CycleProfileModel(
+          trackingGoal: 'predict_period',
+          lastPeriodDate: DateTime.now().subtract(const Duration(days: 7)),
+          cycleLength: 28,
+          periodDuration: 5,
+          regularity: 'regular',
+          birthDate: DateTime(2000, 1, 1),
+        );
 
-      _cycleOverview = _engine.calculateOverview(profile: fallbackCycle);
-      _selectedDayInfo = _engine.calculateDayInfo(
-        profile: fallbackCycle,
-        targetDate: _selectedDate,
-      );
+        _cycleOverview = _engine.calculateOverview(profile: fallbackCycle);
+        _selectedDayInfo = _engine.calculateDayInfo(
+          profile: fallbackCycle,
+          targetDate: _selectedDate,
+        );
+      }
 
       notifyListeners();
     }
@@ -122,6 +157,24 @@ class HomeController extends ChangeNotifier {
     try {
       final cleanDate = DateFormatter.dateOnly(actualStartDate);
       final currentCycle = _userProfile!.cycleProfile;
+
+      // Persist previous period to history storage if prior to new start date
+      final uid = _userProfile!.uid;
+      if (currentCycle.lastPeriodDate.isBefore(cleanDate)) {
+        await ConfirmedPeriodStorage.seedInitialPeriod(
+          userId: uid,
+          startDate: currentCycle.lastPeriodDate,
+          endDate: currentCycle.lastPeriodEndDate,
+          durationDays: currentCycle.periodDuration,
+        );
+      }
+
+      // Record newly confirmed period start
+      await ConfirmedPeriodStorage.recordPeriodStart(
+        userId: uid,
+        startDate: cleanDate,
+        durationDays: currentCycle.periodDuration,
+      );
 
       final updatedCycle = currentCycle.copyWith(
         lastPeriodDate: cleanDate,
@@ -137,7 +190,10 @@ class HomeController extends ChangeNotifier {
 
       _userProfile = _userProfile!.copyWith(cycleProfile: updatedCycle);
       _cycleOverview = _engine.calculateOverview(profile: updatedCycle);
-      _selectedDayInfo = _engine.calculateDayInfo(profile: updatedCycle, targetDate: _selectedDate);
+      _selectedDayInfo = _engine.calculateDayInfo(
+        profile: updatedCycle,
+        targetDate: _selectedDate,
+      );
       _isConfirmationDismissed = true;
 
       notifyListeners();
@@ -156,10 +212,20 @@ class HomeController extends ChangeNotifier {
     }
 
     try {
-      final start = DateFormatter.dateOnly(_userProfile!.cycleProfile.lastPeriodDate);
+      final start = DateFormatter.dateOnly(
+        _userProfile!.cycleProfile.lastPeriodDate,
+      );
       final end = DateFormatter.dateOnly(actualEndDate);
       final diff = end.difference(start).inDays + 1;
       final calculatedDuration = diff.clamp(2, 14);
+
+      // Persist confirmed period completion to history storage
+      final uid = _userProfile!.uid;
+      await ConfirmedPeriodStorage.recordPeriodEnd(
+        userId: uid,
+        endDate: end,
+        startDate: start,
+      );
 
       final updatedCycle = _userProfile!.cycleProfile.copyWith(
         periodDuration: calculatedDuration,
@@ -175,7 +241,10 @@ class HomeController extends ChangeNotifier {
 
       _userProfile = _userProfile!.copyWith(cycleProfile: updatedCycle);
       _cycleOverview = _engine.calculateOverview(profile: updatedCycle);
-      _selectedDayInfo = _engine.calculateDayInfo(profile: updatedCycle, targetDate: _selectedDate);
+      _selectedDayInfo = _engine.calculateDayInfo(
+        profile: updatedCycle,
+        targetDate: _selectedDate,
+      );
 
       notifyListeners();
       return true;
@@ -234,7 +303,7 @@ class HomeController extends ChangeNotifier {
 
   Future<void> _fetchRecordsForMonth(int year, int month) async {
     try {
-      _monthRecords = await _recordDataSource.getRecordsByMonth(year, month);
+      _monthRecords = await _recordRepository.getRecordsByMonth(year, month);
     } catch (_) {
       _monthRecords = [];
     }
@@ -242,7 +311,9 @@ class HomeController extends ChangeNotifier {
 
   Future<void> _fetchRecordForSelectedDate() async {
     try {
-      _selectedDateRecord = await _recordDataSource.getRecordByDate(_selectedDate);
+      _selectedDateRecord = await _recordRepository.getRecordByDate(
+        _selectedDate,
+      );
     } catch (_) {
       _selectedDateRecord = null;
     }
@@ -251,10 +322,11 @@ class HomeController extends ChangeNotifier {
   Future<void> _fetchRecordForToday() async {
     try {
       final now = DateTime.now();
-      if (DateFormatter.dateOnly(_selectedDate) == DateFormatter.dateOnly(now)) {
+      if (DateFormatter.dateOnly(_selectedDate) ==
+          DateFormatter.dateOnly(now)) {
         _todayRecord = _selectedDateRecord;
       } else {
-        _todayRecord = await _recordDataSource.getRecordByDate(now);
+        _todayRecord = await _recordRepository.getRecordByDate(now);
       }
     } catch (_) {
       _todayRecord = null;

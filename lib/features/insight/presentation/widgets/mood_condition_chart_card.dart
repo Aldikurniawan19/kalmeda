@@ -96,7 +96,9 @@ class MoodConditionChartCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        totalCount > 0 ? '($totalCount Catatan)' : '(Bulan Ini)',
+                        totalCount > 0
+                            ? '($totalCount Catatan)'
+                            : '(Bulan Ini)',
                         style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w400,
@@ -133,7 +135,9 @@ class MoodConditionChartCard extends StatelessWidget {
               if (totalCount == 0)
                 // Empty state if no records yet
                 Container(
-                  padding: const EdgeInsets.symmetric(vertical: AppSizes.space12),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSizes.space12,
+                  ),
                   child: Row(
                     children: [
                       Container(
@@ -191,7 +195,9 @@ class MoodConditionChartCard extends StatelessWidget {
                         children: [
                           CustomPaint(
                             size: const Size(105, 105),
-                            painter: _DynamicMoodDonutChartPainter(percentages: percentages),
+                            painter: _DynamicMoodDonutChartPainter(
+                              percentages: percentages,
+                            ),
                           ),
                           // Center pink smiley face
                           Container(
@@ -266,12 +272,7 @@ class _MoodProgressItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Image.asset(
-          iconPath,
-          width: 16,
-          height: 16,
-          fit: BoxFit.contain,
-        ),
+        Image.asset(iconPath, width: 16, height: 16, fit: BoxFit.contain),
         const SizedBox(width: AppSizes.space6),
         SizedBox(
           width: 50,
@@ -335,7 +336,10 @@ class _DynamicMoodDonutChartPainter extends CustomPainter {
     final radius = size.width / 2;
     const strokeWidth = 16.0;
 
-    final rect = Rect.fromCircle(center: center, radius: radius - strokeWidth / 2);
+    final rect = Rect.fromCircle(
+      center: center,
+      radius: radius - strokeWidth / 2,
+    );
 
     final total = percentages.fold<double>(0.0, (prev, p) => prev + p);
     if (total == 0) {

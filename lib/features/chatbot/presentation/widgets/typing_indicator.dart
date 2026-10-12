@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:menstracker/core/constants/app_colors.dart';
 import 'package:menstracker/core/constants/app_sizes.dart';
+import 'package:menstracker/features/chatbot/presentation/widgets/chat_mascot.dart';
 
 /// Clean animated typing indicator simulating clinical assistant thought and formulation.
 /// Dynamically updates contextual status messages when deep clinical analysis requires additional time.
@@ -86,21 +87,7 @@ class _TypingIndicatorState extends State<TypingIndicator>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 24,
-            height: 24,
-            decoration: const BoxDecoration(
-              color: AppColors.primarySoft,
-              shape: BoxShape.circle,
-            ),
-            child: const Center(
-              child: Icon(
-                Icons.support_agent_rounded,
-                size: 14,
-                color: AppColors.primary,
-              ),
-            ),
-          ),
+          const ChatMascot(size: 28, mood: ChatMascotMood.thinking),
           const SizedBox(width: AppSizes.space8),
           AnimatedBuilder(
             animation: _controller,

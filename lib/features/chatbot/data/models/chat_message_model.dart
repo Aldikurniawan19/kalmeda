@@ -9,6 +9,8 @@ class ChatMessageModel {
   final String? actionLabel;
   final String? recordNote;
   final List<int>? symptomIndices;
+  final bool isVoiceNote;
+  final int? voiceDurationSeconds;
 
   const ChatMessageModel({
     required this.id,
@@ -20,6 +22,8 @@ class ChatMessageModel {
     this.actionLabel,
     this.recordNote,
     this.symptomIndices,
+    this.isVoiceNote = false,
+    this.voiceDurationSeconds,
   });
 
   ChatMessageModel copyWith({
@@ -32,6 +36,8 @@ class ChatMessageModel {
     String? actionLabel,
     String? recordNote,
     List<int>? symptomIndices,
+    bool? isVoiceNote,
+    int? voiceDurationSeconds,
   }) {
     return ChatMessageModel(
       id: id ?? this.id,
@@ -43,6 +49,8 @@ class ChatMessageModel {
       actionLabel: actionLabel ?? this.actionLabel,
       recordNote: recordNote ?? this.recordNote,
       symptomIndices: symptomIndices ?? this.symptomIndices,
+      isVoiceNote: isVoiceNote ?? this.isVoiceNote,
+      voiceDurationSeconds: voiceDurationSeconds ?? this.voiceDurationSeconds,
     );
   }
 }

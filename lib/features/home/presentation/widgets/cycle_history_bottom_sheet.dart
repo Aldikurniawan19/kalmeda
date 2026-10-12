@@ -2,17 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:menstracker/core/constants/app_colors.dart';
 import 'package:menstracker/core/constants/app_sizes.dart';
 import 'package:menstracker/core/utils/date_formatter.dart';
-import 'package:menstracker/features/record/data/datasources/record_remote_data_source.dart';
 import 'package:menstracker/features/record/data/models/cycle_record_model.dart';
+import 'package:menstracker/features/record/data/repositories/record_repository_impl.dart';
+import 'package:menstracker/features/record/domain/repositories/record_repository.dart';
 
 /// Interactive modal bottom sheet displaying full chronological history of cycle and symptom records.
 class CycleHistoryBottomSheet extends StatelessWidget {
   final VoidCallback? onAddRecord;
 
-  const CycleHistoryBottomSheet({
-    super.key,
-    this.onAddRecord,
-  });
+  const CycleHistoryBottomSheet({super.key, this.onAddRecord});
 
   static Future<void> show(BuildContext context, {VoidCallback? onAddRecord}) {
     return showModalBottomSheet(
@@ -53,7 +51,7 @@ class CycleHistoryBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final recordDataSource = RecordRemoteDataSourceImpl();
+    final RecordRepository recordRepository = RecordRepositoryImpl();
 
     return Container(
       constraints: BoxConstraints(
@@ -137,7 +135,7 @@ class CycleHistoryBottomSheet extends StatelessWidget {
           // Stream of Records List
           Expanded(
             child: StreamBuilder<List<CycleRecordModel>>(
-              stream: recordDataSource.getRecordsStream(),
+              stream: recordRepository.getRecordsStream(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
@@ -192,7 +190,10 @@ class CycleHistoryBottomSheet extends StatelessWidget {
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.primary,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -210,18 +211,32 @@ class CycleHistoryBottomSheet extends StatelessWidget {
                     vertical: AppSizes.space14,
                   ),
                   itemCount: records.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: AppSizes.space12),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: AppSizes.space12),
                   itemBuilder: (context, index) {
                     final item = records[index];
-                    final flowText = _flowLabels[item.flowIndex.clamp(0, _flowLabels.length - 1)];
-                    final moodText = _moodLabels[item.moodIndex.clamp(0, _moodLabels.length - 1)];
+                    final flowText =
+                        _flowLabels[item.flowIndex.clamp(
+                          0,
+                          _flowLabels.length - 1,
+                        )];
+                    final moodText =
+                        _moodLabels[item.moodIndex.clamp(
+                          0,
+                          _moodLabels.length - 1,
+                        )];
 
                     return Container(
                       padding: const EdgeInsets.all(AppSizes.space14),
                       decoration: BoxDecoration(
                         color: AppColors.cardBackground,
-                        borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                        border: Border.all(color: const Color(0xFFF3EDF5), width: 1.0),
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusMedium,
+                        ),
+                        border: Border.all(
+                          color: const Color(0xFFF3EDF5),
+                          width: 1.0,
+                        ),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.02),
@@ -238,7 +253,10 @@ class CycleHistoryBottomSheet extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                DateFormatter.format(item.date, includeDayName: true),
+                                DateFormatter.format(
+                                  item.date,
+                                  includeDayName: true,
+                                ),
                                 style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
@@ -246,10 +264,15 @@ class CycleHistoryBottomSheet extends StatelessWidget {
                                 ),
                               ),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFFFF0F4),
-                                  borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                                  borderRadius: BorderRadius.circular(
+                                    AppSizes.radiusSmall,
+                                  ),
                                 ),
                                 child: Text(
                                   flowText,
@@ -288,11 +311,15 @@ class CycleHistoryBottomSheet extends StatelessWidget {
                               spacing: 6,
                               runSpacing: 6,
                               children: item.symptoms.map((sIdx) {
-                                final sName = (sIdx >= 0 && sIdx < _symptomLabels.length)
+                                final sName =
+                                    (sIdx >= 0 && sIdx < _symptomLabels.length)
                                     ? _symptomLabels[sIdx]
                                     : 'Gejala';
                                 return Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFFF7F3F8),
                                     borderRadius: BorderRadius.circular(6),

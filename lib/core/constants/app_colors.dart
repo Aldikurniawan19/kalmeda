@@ -57,10 +57,11 @@ abstract class AppColors {
   static const Color iconButtonBg = Color(0xFFFFFFFF);
   static const Color notificationDot = Color(0xFFFF4D79);
 
-  // Forms & Inputs
+  // Forms & Inputs & Alerts
   static const Color inputBackground = Color(0xFFF9F6F8);
   static const Color inputBorder = Color(0xFFEEE8EE);
   static const Color inputBorderFocused = Color(0xFFFF4D79);
+  static const Color success = Color(0xFF2563EB);
   static const Color error = Color(0xFFE53935);
   static const Color divider = Color(0xFFEEEAF0);
   static const Color socialButtonBorder = Color(0xFFE8E2EC);
@@ -84,5 +85,12 @@ abstract class AppColors {
   static const Color chatOnlineIndicator = Color(0xFF10B981);
   static const Color chatChipBackground = Color(0xFFF9F6F8);
   static const Color chatChipBorder = Color(0xFFEEE8EE);
-}
 
+  // Chat Mascot Tokens (animated consultant character)
+  static const Color chatMascotBody = Color(0xFFFF4D79);
+  static const Color chatMascotBodyHighlight = Color(0xFFFF85A6);
+  static const Color chatMascotEye = Color(0xFFFFFFFF);
+  static const Color chatMascotPupil = Color(0xFF1E1E24);
+  static const Color chatMascotCheek = Color(0xFFFFB8CA);
+  static const Color chatMascotShadow = Color(0x1F1E1E24);
+}

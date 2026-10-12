@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'package:menstracker/core/constants/app_colors.dart';
+import 'package:menstracker/core/constants/app_info.dart';
 import 'package:menstracker/core/constants/app_sizes.dart';
+import 'package:menstracker/features/app_update/presentation/controllers/app_update_controller.dart';
+import 'package:menstracker/core/services/mascot_sound_service.dart';
 import 'package:menstracker/core/utils/app_page_route.dart';
 import 'package:menstracker/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:menstracker/features/auth/presentation/screens/login_screen.dart';
@@ -34,6 +37,7 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   int _currentNavIndex = 4;
+  bool _isSoundEnabled = MascotSoundService().isSoundEnabled;
 
   void _handleNavTapped(int index) {
     if (widget.onNavTapped != null) {
@@ -117,6 +121,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     onTap: () => ReminderSettingsBottomSheet.show(context),
                   ),
                   ProfileMenuItemData(
+                    icon: Icons.volume_up_outlined,
+                    title: 'Efek Suara Maskot',
+                    trailing: Switch.adaptive(
+                      value: _isSoundEnabled,
+                      activeTrackColor: AppColors.primary,
+                      activeThumbColor: Colors.white,
+                      onChanged: (val) {
+                        setState(() {
+                          _isSoundEnabled = val;
+                        });
+                        MascotSoundService().setSoundEnabled(val);
+                      },
+                    ),
+                    onTap: () {
+                      final newVal = !_isSoundEnabled;
+                      setState(() {
+                        _isSoundEnabled = newVal;
+                      });
+                      MascotSoundService().setSoundEnabled(newVal);
+                    },
+                  ),
+                  ProfileMenuItemData(
                     icon: Icons.lock_outline_rounded,
                     title: 'Ubah Kata Sandi',
                     onTap: _openChangePassword,
@@ -129,6 +155,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ProfileMenuGroup(
                 title: 'Bantuan & Lainnya',
                 items: [
+                  ProfileMenuItemData(
+                    icon: Icons.system_update_rounded,
+                    title: 'Periksa Pembaruan',
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF0F5),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Text(
+                        'v${AppInfo.appVersion}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    onTap: () =>
+                        AppUpdateController().checkUpdateManually(context),
+                  ),
                   ProfileMenuItemData(
                     icon: Icons.help_outline_rounded,
                     title: 'Pusat Bantuan',
@@ -167,7 +217,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: Column(
                   children: [
                     Text(
-                      'Kalmeda v2.0.0',
+                      'Kalmeda v${AppInfo.appVersion}',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,

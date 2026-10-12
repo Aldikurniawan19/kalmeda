@@ -6,11 +6,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:menstracker/core/constants/app_colors.dart';
 import 'package:menstracker/core/constants/app_sizes.dart';
+import 'package:menstracker/core/services/network_connectivity_service.dart';
 import 'package:menstracker/core/services/notification_service.dart';
 import 'package:menstracker/core/utils/app_page_route.dart';
 import 'package:menstracker/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:menstracker/features/auth/presentation/screens/login_screen.dart';
 import 'package:menstracker/features/home/presentation/screens/home_screen.dart';
+import 'package:menstracker/features/network/presentation/screens/no_internet_screen.dart';
 import 'package:menstracker/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:menstracker/features/period_setup/presentation/screens/period_setup_screen.dart';
 
@@ -68,7 +70,27 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _isNavigating = true;
     _navigationTimer?.cancel();
 
-    // Ensure auth check has resolved
+    // 1. Mandatory Internet Connection Verification on Launch
+    final hasInternet = await NetworkConnectivityService().checkConnection();
+    if (!hasInternet) {
+      if (!mounted) return;
+      _isNavigating = false;
+      Navigator.of(context).pushReplacement(
+        AppPageRoute(
+          builder: (_) => NoInternetScreen(
+            onConnected: () {
+              if (mounted) {
+                _isNavigating = false;
+                _navigateNext();
+              }
+            },
+          ),
+        ),
+      );
+      return;
+    }
+
+    // 2. Ensure auth check has resolved
     try {
       if (_authCheckFuture != null) {
         await _authCheckFuture;

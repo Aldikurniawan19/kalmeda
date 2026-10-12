@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:menstracker/core/constants/app_colors.dart';
 import 'package:menstracker/core/constants/app_sizes.dart';
 import 'package:menstracker/core/constants/app_text_styles.dart';
+import 'package:menstracker/core/widgets/interactive_mascot.dart';
 import 'package:menstracker/features/auth/presentation/controllers/auth_controller.dart';
 
-/// Top header widget with dynamic greetings and illustration.
+/// Top header widget with dynamic greetings and interactive sound-enabled mascot illustration.
 class HomeHeader extends StatelessWidget {
   const HomeHeader({super.key});
 
@@ -21,15 +22,13 @@ class HomeHeader extends StatelessWidget {
         return Stack(
           clipBehavior: Clip.none,
           children: [
-            // Woman illustration positioned on the right
-            Positioned(
-              top: -6,
-              right: -2,
-              child: Image.asset(
-                'assets/Komponen/komponenOrang.png',
-                width: 140,
-                height: 140,
-                fit: BoxFit.contain,
+            // Interactive Mascot positioned on the right
+            const Positioned(
+              top: -20,
+              right: -16,
+              child: InteractiveMascot(
+                width: 135,
+                height: 135,
               ),
             ),
 

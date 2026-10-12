@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import 'package:menstracker/core/constants/app_colors.dart';
 import 'package:menstracker/core/constants/app_sizes.dart';
 
 /// Combined slider and stepper counter with clinical reference badge.
+/// Prevents overflow with flexible text layout and provides value clamping.
 class PersonalInfoStepperSlider extends StatelessWidget {
   final String label;
   final int value;
@@ -25,6 +27,9 @@ class PersonalInfoStepperSlider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final clampedValue = value.clamp(min, max);
+    final divisions = (max - min) > 0 ? (max - min) : 1;
+
     return Container(
       padding: const EdgeInsets.all(AppSizes.space16),
       decoration: BoxDecoration(
@@ -35,28 +40,31 @@ class PersonalInfoStepperSlider extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header: Label & Value Stepper Controls
+          // Header: Label & Value Stepper Controls (Protected from horizontal overflow)
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.textPrimary,
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
               ),
+              const SizedBox(width: AppSizes.space8),
               Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   _StepperButton(
                     icon: Icons.remove_rounded,
-                    onTap: value > min ? () => onChanged(value - 1) : null,
+                    onTap: clampedValue > min ? () => onChanged(clampedValue - 1) : null,
                   ),
                   Container(
-                    constraints: const BoxConstraints(minWidth: 70),
+                    constraints: const BoxConstraints(minWidth: 64),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: AppSizes.space10,
+                      horizontal: AppSizes.space8,
                       vertical: AppSizes.space4,
                     ),
                     margin: const EdgeInsets.symmetric(horizontal: AppSizes.space6),
@@ -66,7 +74,7 @@ class PersonalInfoStepperSlider extends StatelessWidget {
                       border: Border.all(color: const Color(0xFFFFD1DE), width: 1.0),
                     ),
                     child: Text(
-                      '$value $unit',
+                      '$clampedValue $unit',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 13,
@@ -77,7 +85,7 @@ class PersonalInfoStepperSlider extends StatelessWidget {
                   ),
                   _StepperButton(
                     icon: Icons.add_rounded,
-                    onTap: value < max ? () => onChanged(value + 1) : null,
+                    onTap: clampedValue < max ? () => onChanged(clampedValue + 1) : null,
                   ),
                 ],
               ),
@@ -96,10 +104,10 @@ class PersonalInfoStepperSlider extends StatelessWidget {
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 7),
             ),
             child: Slider(
-              value: value.toDouble(),
+              value: clampedValue.toDouble(),
               min: min.toDouble(),
               max: max.toDouble(),
-              divisions: max - min,
+              divisions: divisions,
               onChanged: (val) => onChanged(val.round()),
             ),
           ),

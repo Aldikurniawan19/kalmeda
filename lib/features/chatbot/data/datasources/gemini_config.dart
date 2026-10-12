@@ -4,7 +4,7 @@ class GeminiConfig {
   /// Google Gemini API Key obtained from Google AI Studio (https://aistudio.google.com/).
   static const String apiKey = String.fromEnvironment(
     'GEMINI_API_KEY',
-    defaultValue: 'AQ.Ab8RN6LYv9Xl9vBysUVvtO4NppmTsqRfZgkp--Hb0h_aqCThLg',
+    defaultValue: 'AQ.Ab8RN6J5qAhpMmXjjkSywOIgYWFu9o7UPxAnD6k6e9kXkNjJ-w',
   );
 
   /// Default model identifier.

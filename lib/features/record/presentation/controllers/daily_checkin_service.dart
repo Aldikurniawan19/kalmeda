@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'package:menstracker/core/services/notification_service.dart';
 import 'package:menstracker/features/record/data/datasources/record_remote_data_source.dart';
+import 'package:menstracker/features/record/data/repositories/record_repository_impl.dart';
 import 'package:menstracker/features/record/presentation/widgets/daily_checkin_dialog.dart';
 
 /// Active time slots for daily condition check-ins.
@@ -43,7 +44,7 @@ class DailyCheckinService {
     RecordRemoteDataSource? recordDataSource,
     FirebaseAuth? auth,
     NotificationService? notificationService,
-  })  : _recordDataSource = recordDataSource ?? RecordRemoteDataSourceImpl(),
+  })  : _recordDataSource = recordDataSource ?? RecordRepositoryImpl(),
         _auth = auth ?? FirebaseAuth.instance,
         _notificationService = notificationService ?? NotificationService();
 

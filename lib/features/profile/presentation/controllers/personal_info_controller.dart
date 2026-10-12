@@ -72,11 +72,15 @@ class PersonalInfoController extends ChangeNotifier {
       nameController.text = profile.name;
       _email = profile.email;
       _birthDate = profile.birthDate;
-      _trackingGoal = profile.cycleProfile.trackingGoal;
+      _trackingGoal = profile.cycleProfile.trackingGoal.isNotEmpty
+          ? profile.cycleProfile.trackingGoal
+          : 'predict_period';
       _lastPeriodDate = profile.cycleProfile.lastPeriodDate;
-      _cycleLength = profile.cycleProfile.cycleLength;
-      _periodDuration = profile.cycleProfile.periodDuration;
-      _regularity = profile.cycleProfile.regularity;
+      _cycleLength = profile.cycleProfile.cycleLength.clamp(21, 45);
+      _periodDuration = profile.cycleProfile.periodDuration.clamp(2, 10);
+      _regularity = profile.cycleProfile.regularity.isNotEmpty
+          ? profile.cycleProfile.regularity
+          : 'regular';
 
       final hp = profile.healthProfile;
       if (hp != null) {

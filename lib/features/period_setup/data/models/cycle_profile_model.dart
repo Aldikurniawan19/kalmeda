@@ -27,58 +27,74 @@ class CycleProfileModel {
   /// Computed birth year property derived from birthDate.
   int get birthYear => birthDate.year;
 
+  /// Helper to safely parse dates from Timestamp, ISO String, or epoch milliseconds.
+  static DateTime? _parseDate(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is DateTime) return raw;
+    if (raw is Timestamp) return raw.toDate();
+    if (raw is String && raw.isNotEmpty) {
+      return DateTime.tryParse(raw);
+    }
+    if (raw is num) {
+      final intVal = raw.toInt();
+      // If it looks like milliseconds since epoch (> 10^10)
+      if (intVal > 10000000000) {
+        return DateTime.fromMillisecondsSinceEpoch(intVal);
+      }
+      // If it looks like seconds since epoch (> 10^7)
+      if (intVal > 10000000) {
+        return DateTime.fromMillisecondsSinceEpoch(intVal * 1000);
+      }
+      // If it looks like a year (e.g. 1990 - 2030)
+      if (intVal >= 1900 && intVal <= 2100) {
+        return DateTime(intVal, 1, 1);
+      }
+    }
+    return null;
+  }
+
   factory CycleProfileModel.fromJson(Map<String, dynamic> json) {
-    DateTime parsedLastPeriod = DateTime.now();
-    final lmpRaw = json['lastPeriodDate'];
-    if (lmpRaw is Timestamp) {
-      parsedLastPeriod = lmpRaw.toDate();
-    } else if (lmpRaw is String) {
-      parsedLastPeriod = DateTime.tryParse(lmpRaw) ?? DateTime.now();
-    }
+    final lmpRaw = json['lastPeriodDate'] ??
+        json['last_period_date'] ??
+        json['lastPeriod'] ??
+        json['lmp'];
+    final parsedLastPeriod = _parseDate(lmpRaw) ?? DateTime.now().subtract(const Duration(days: 7));
 
-    DateTime? parsedLastPeriodEnd;
-    final lmpEndRaw = json['lastPeriodEndDate'];
-    if (lmpEndRaw is Timestamp) {
-      parsedLastPeriodEnd = lmpEndRaw.toDate();
-    } else if (lmpEndRaw is String) {
-      parsedLastPeriodEnd = DateTime.tryParse(lmpEndRaw);
-    }
+    final lmpEndRaw = json['lastPeriodEndDate'] ??
+        json['last_period_end_date'] ??
+        json['lastPeriodEnd'];
+    final parsedLastPeriodEnd = _parseDate(lmpEndRaw);
 
-    DateTime parsedBirthDate = DateTime(2000, 1, 1);
-    final birthDateRaw = json['birthDate'];
-    if (birthDateRaw is Timestamp) {
-      parsedBirthDate = birthDateRaw.toDate();
-    } else if (birthDateRaw is String) {
-      parsedBirthDate = DateTime.tryParse(birthDateRaw) ?? DateTime(2000, 1, 1);
-    } else if (json['birthYear'] is num) {
-      parsedBirthDate = DateTime((json['birthYear'] as num).toInt(), 1, 1);
-    }
+    final birthRaw = json['birthDate'] ??
+        json['birth_date'] ??
+        json['dateOfBirth'] ??
+        json['date_of_birth'] ??
+        json['birthYear'] ??
+        json['birth_year'];
+    final parsedBirthDate = _parseDate(birthRaw) ?? DateTime(2000, 1, 1);
 
-    DateTime? parsedCreatedAt;
-    final createdRaw = json['createdAt'];
-    if (createdRaw is Timestamp) {
-      parsedCreatedAt = createdRaw.toDate();
-    }
+    final parsedCreatedAt = _parseDate(json['createdAt'] ?? json['created_at']);
+    final parsedUpdatedAt = _parseDate(json['updatedAt'] ?? json['updated_at']);
 
-    DateTime? parsedUpdatedAt;
-    final updatedRaw = json['updatedAt'];
-    if (updatedRaw is Timestamp) {
-      parsedUpdatedAt = updatedRaw.toDate();
-    }
+    final rawGoal = json['trackingGoal'] ?? json['tracking_goal'];
+    final rawCycleLength = json['cycleLength'] ?? json['cycle_length'];
+    final rawPeriodDuration = json['periodDuration'] ?? json['period_duration'];
+    final rawRegularity = json['regularity'];
 
     return CycleProfileModel(
-      trackingGoal: json['trackingGoal'] as String? ?? 'predict_period',
+      trackingGoal: rawGoal is String && rawGoal.isNotEmpty ? rawGoal : 'predict_period',
       lastPeriodDate: parsedLastPeriod,
       lastPeriodEndDate: parsedLastPeriodEnd,
-      cycleLength: (json['cycleLength'] as num?)?.toInt() ?? 28,
-      periodDuration: (json['periodDuration'] as num?)?.toInt() ?? 5,
-      regularity: json['regularity'] as String? ?? 'regular',
+      cycleLength: (rawCycleLength as num?)?.toInt() ?? 28,
+      periodDuration: (rawPeriodDuration as num?)?.toInt() ?? 5,
+      regularity: rawRegularity is String && rawRegularity.isNotEmpty ? rawRegularity : 'regular',
       birthDate: parsedBirthDate,
       createdAt: parsedCreatedAt,
       updatedAt: parsedUpdatedAt,
     );
   }
 
+  /// Converts this model into a Firestore-compatible JSON map.
   Map<String, dynamic> toJson() {
     return {
       'trackingGoal': trackingGoal,
@@ -91,6 +107,22 @@ class CycleProfileModel {
       'birthYear': birthYear,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
+    };
+  }
+
+  /// Converts this model into a standard JSON-serializable Map for local SharedPreferences cache.
+  Map<String, dynamic> toLocalMap() {
+    return {
+      'trackingGoal': trackingGoal,
+      'lastPeriodDate': lastPeriodDate.toIso8601String(),
+      'lastPeriodEndDate': lastPeriodEndDate?.toIso8601String(),
+      'cycleLength': cycleLength,
+      'periodDuration': periodDuration,
+      'regularity': regularity,
+      'birthDate': birthDate.toIso8601String(),
+      'birthYear': birthYear,
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 

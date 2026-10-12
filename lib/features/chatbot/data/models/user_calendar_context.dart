@@ -57,8 +57,12 @@ class UserCalendarContext {
   }) {
     final today = DateFormatter.dateOnly(referenceDate ?? DateTime.now());
     final lmp = DateFormatter.dateOnly(cycleProfile.lastPeriodDate);
-    final cycleLength = cycleProfile.cycleLength > 0 ? cycleProfile.cycleLength : 28;
-    final periodDuration = cycleProfile.periodDuration > 0 ? cycleProfile.periodDuration : 5;
+    final cycleLength = cycleProfile.cycleLength > 0
+        ? cycleProfile.cycleLength
+        : 28;
+    final periodDuration = cycleProfile.periodDuration > 0
+        ? cycleProfile.periodDuration
+        : 5;
 
     final totalElapsedDays = today.difference(lmp).inDays;
 
@@ -67,7 +71,9 @@ class UserCalendarContext {
     final int daysLate = isLate ? (totalElapsedDays - cycleLength) : 0;
 
     // Current cycle day position
-    final int currentCycleDay = totalElapsedDays >= 0 ? (totalElapsedDays + 1) : 1;
+    final int currentCycleDay = totalElapsedDays >= 0
+        ? (totalElapsedDays + 1)
+        : 1;
 
     // Next period prediction
     final DateTime nextPeriodDate = lmp.add(Duration(days: cycleLength));
@@ -75,8 +81,12 @@ class UserCalendarContext {
 
     // Ovulation & fertile window calculation (14 days before next period)
     final ovulationDayNumber = (cycleLength - 14).clamp(1, cycleLength - 1);
-    final DateTime ovulationDate = lmp.add(Duration(days: ovulationDayNumber - 1));
-    final DateTime fertileWindowStart = ovulationDate.subtract(const Duration(days: 5));
+    final DateTime ovulationDate = lmp.add(
+      Duration(days: ovulationDayNumber - 1),
+    );
+    final DateTime fertileWindowStart = ovulationDate.subtract(
+      const Duration(days: 5),
+    );
     final DateTime fertileWindowEnd = ovulationDate;
 
     // Determine current phase from CycleEngineService
@@ -85,9 +95,11 @@ class UserCalendarContext {
       targetDate: today,
     );
 
-    final isPeriodActive = totalElapsedDays >= 0 &&
+    final isPeriodActive =
+        totalElapsedDays >= 0 &&
         totalElapsedDays < periodDuration &&
-        (cycleProfile.lastPeriodEndDate == null || !today.isAfter(cycleProfile.lastPeriodEndDate!));
+        (cycleProfile.lastPeriodEndDate == null ||
+            !today.isAfter(cycleProfile.lastPeriodEndDate!));
 
     final int? userAge = birthDate != null && today.year > birthDate.year
         ? (today.year - birthDate.year)
@@ -153,28 +165,50 @@ class UserCalendarContext {
     buffer.writeln('DATA KALENDER & STATUS SIKLUS PENGGUNA TERKINI:');
     if (userName != null) buffer.writeln('- Nama Pengguna: $userName');
     if (userAge != null) buffer.writeln('- Usia: $userAge tahun');
-    buffer.writeln('- Tanggal Hari Pertama Haid Terakhir (LMP): ${DateFormatter.format(lastPeriodDate)}');
-    buffer.writeln('- Panjang Siklus Rata-rata: $cycleLength hari (Keteraturan: $regularityLabel)');
+    buffer.writeln(
+      '- Tanggal Hari Pertama Haid Terakhir (LMP): ${DateFormatter.format(lastPeriodDate)}',
+    );
+    buffer.writeln(
+      '- Panjang Siklus Rata-rata: $cycleLength hari (Keteraturan: $regularityLabel)',
+    );
     buffer.writeln('- Durasi Haid Rata-rata: $periodDuration hari');
-    buffer.writeln('- Posisi Siklus Hari Ini: Hari ke-$currentCycleDay ($phaseName)');
-    buffer.writeln('- Tanggal Perkiraan Haid Berikutnya: ${DateFormatter.format(nextPeriodDate)}');
+    buffer.writeln(
+      '- Posisi Siklus Hari Ini: Hari ke-$currentCycleDay ($phaseName)',
+    );
+    buffer.writeln(
+      '- Tanggal Perkiraan Haid Berikutnya: ${DateFormatter.format(nextPeriodDate)}',
+    );
 
     if (isLate) {
       if (daysLate == 0) {
-        buffer.writeln('- Status Keterlambatan: HARI INI adalah jadwal prediksi menstruasi dimulai.');
+        buffer.writeln(
+          '- Status Keterlambatan: HARI INI adalah jadwal prediksi menstruasi dimulai.',
+        );
       } else {
-        buffer.writeln('- Status Keterlambatan: SUDAH TERLAMBAT $daysLate HARI dari jadwal prediksi (${DateFormatter.format(nextPeriodDate)}).');
+        buffer.writeln(
+          '- Status Keterlambatan: SUDAH TERLAMBAT $daysLate HARI dari jadwal prediksi (${DateFormatter.format(nextPeriodDate)}).',
+        );
       }
     } else {
-      buffer.writeln('- Status Keterlambatan: Belum terlambat (masih $daysUntilNextPeriod hari lagi menuju perkiraan haid).');
+      buffer.writeln(
+        '- Status Keterlambatan: Belum terlambat (masih $daysUntilNextPeriod hari lagi menuju perkiraan haid).',
+      );
     }
 
-    buffer.writeln('- Perkiraan Puncak Ovulasi: ${DateFormatter.format(ovulationDate)}');
-    buffer.writeln('- Jendela Masa Subur: ${DateFormatter.format(fertileWindowStart)} s/d ${DateFormatter.format(fertileWindowEnd)}');
+    buffer.writeln(
+      '- Perkiraan Puncak Ovulasi: ${DateFormatter.format(ovulationDate)}',
+    );
+    buffer.writeln(
+      '- Jendela Masa Subur: ${DateFormatter.format(fertileWindowStart)} s/d ${DateFormatter.format(fertileWindowEnd)}',
+    );
 
     if (healthProfile != null) {
-      buffer.writeln('- Status Reproduksi: ${healthProfile!.reproductiveStatusLabel}');
-      buffer.writeln('- Metode Kontrasepsi: ${healthProfile!.contraceptionLabel}');
+      buffer.writeln(
+        '- Status Reproduksi: ${healthProfile!.reproductiveStatusLabel}',
+      );
+      buffer.writeln(
+        '- Metode Kontrasepsi: ${healthProfile!.contraceptionLabel}',
+      );
       final conditions = healthProfile!.gynecologicalConditions
           .where((c) => c != 'none' && c != 'prefer_not_to_say')
           .map(HealthProfileModel.conditionToLabel)

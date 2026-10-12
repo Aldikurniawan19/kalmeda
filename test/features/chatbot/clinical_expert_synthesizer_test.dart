@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:menstracker/features/chatbot/data/datasources/clinical_expert_synthesizer.dart';
 import 'package:menstracker/features/chatbot/data/datasources/clinical_knowledge_base.dart';
+import 'package:menstracker/features/chatbot/data/models/chat_message_model.dart';
 import 'package:menstracker/features/chatbot/data/models/user_calendar_context.dart';
 import 'package:menstracker/features/period_setup/data/models/cycle_profile_model.dart';
 
@@ -414,6 +415,116 @@ void main() {
         expect(response.text, contains('Melihat Kalender Kesuburan Pribadimu:'));
         expect(response.text, contains('Perkiraan Puncak Ovulasi:'));
         expect(response.text, contains('Jendela Masa Subur:'));
+      },
+    );
+  });
+
+  group('Multi-Turn Chained Conversation & Context Continuity Tests', () {
+    test(
+      'Seamlessly resolves referential follow-up "apakah itu aman?" to prior late period topic',
+      () {
+        final history = [
+          ChatMessageModel(
+            id: 'u1',
+            text: 'kenapa mens telat pada bulan ini ya dok',
+            isUser: true,
+            timestamp: DateTime.now(),
+          ),
+          ChatMessageModel(
+            id: 'b1',
+            text:
+                'Halo Kak, mengenai keluhan keterlambatan siklus haid yang sedang kamu alami, kondisi ini umumnya merupakan manifestasi dari fluktuasi poros hipotalamus-hipofisis-ovarium...',
+            isUser: false,
+            timestamp: DateTime.now(),
+          ),
+        ];
+
+        final followUpResponse = ClinicalExpertSynthesizer.synthesizeResponse(
+          'apakah itu aman?',
+          conversationHistory: history,
+          userName: 'Nadia',
+        );
+
+        expect(followUpResponse.text, startsWith('Halo Kak Nadia,'));
+        expect(
+          followUpResponse.text,
+          contains('keterlambatan siklus haid tersebut aman atau berbahaya'),
+        );
+        expect(followUpResponse.text, contains('2 hingga 7 hari'));
+        expect(followUpResponse.text, contains('kortisol'));
+        expect(
+          followUpResponse.text,
+          contains('Langkah-langkah penanganan mandiri'),
+        );
+        expect(
+          followUpResponse.text,
+          contains('Tanda-tanda bahaya yang patut diwaspadai'),
+        );
+      },
+    );
+
+    test(
+      'Seamlessly resolves follow-up "apa solusinya?" for menstrual cramps topic',
+      () {
+        final history = [
+          ChatMessageModel(
+            id: 'u1',
+            text: 'perut saya kram banget pas haid hari pertama',
+            isUser: true,
+            timestamp: DateTime.now(),
+          ),
+          ChatMessageModel(
+            id: 'b1',
+            text:
+                'Halo Kak, mengenai rasa kram dan melilit di perut bagian bawah yang sedang kamu alami...',
+            isUser: false,
+            timestamp: DateTime.now(),
+          ),
+        ];
+
+        final followUpResponse = ClinicalExpertSynthesizer.synthesizeResponse(
+          'apa solusinya dan apakah boleh minum obat?',
+          conversationHistory: history,
+          userName: 'Maya',
+        );
+
+        expect(followUpResponse.text, startsWith('Halo Kak Maya,'));
+        expect(followUpResponse.text, contains('kram perut haid'));
+        expect(followUpResponse.text, contains('Kompres Hangat'));
+        expect(followUpResponse.text, contains('Pilihan Obat Pereda Nyeri'));
+        expect(followUpResponse.text, contains('Parasetamol'));
+      },
+    );
+
+    test(
+      'Seamlessly resolves follow-up "apakah berbahaya?" for dark blood inquiry',
+      () {
+        final history = [
+          ChatMessageModel(
+            id: 'u1',
+            text: 'kenapa darah haid saya warnanya hitam pekat',
+            isUser: true,
+            timestamp: DateTime.now(),
+          ),
+          ChatMessageModel(
+            id: 'b1',
+            text:
+                'Halo Kak, mengenai kekhawatiran kamu melihat darah haid yang berwarna gelap atau hitam pekat...',
+            isUser: false,
+            timestamp: DateTime.now(),
+          ),
+        ];
+
+        final followUpResponse = ClinicalExpertSynthesizer.synthesizeResponse(
+          'apakah berbahaya?',
+          conversationHistory: history,
+          userName: 'Siti',
+        );
+
+        expect(followUpResponse.text, startsWith('Halo Kak Siti,'));
+        expect(followUpResponse.text, contains('darah haid yang berwarna hitam'));
+        expect(followUpResponse.text, contains('sepenuhnya aman'));
+        expect(followUpResponse.text, contains('oksidasi'));
       },
     );
   });

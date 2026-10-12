@@ -18,10 +18,12 @@ class ReminderSettingsBottomSheet extends StatefulWidget {
   }
 
   @override
-  State<ReminderSettingsBottomSheet> createState() => _ReminderSettingsBottomSheetState();
+  State<ReminderSettingsBottomSheet> createState() =>
+      _ReminderSettingsBottomSheetState();
 }
 
-class _ReminderSettingsBottomSheetState extends State<ReminderSettingsBottomSheet> {
+class _ReminderSettingsBottomSheetState
+    extends State<ReminderSettingsBottomSheet> {
   late bool _period;
   late bool _fertile;
   late bool _water;
@@ -79,7 +81,7 @@ class _ReminderSettingsBottomSheetState extends State<ReminderSettingsBottomShee
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Pengaturan pengingat berhasil disimpan.'),
-        backgroundColor: AppColors.primary,
+        backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
         duration: Duration(seconds: 2),
       ),
@@ -179,7 +181,8 @@ class _ReminderSettingsBottomSheetState extends State<ReminderSettingsBottomShee
                   icon: Icons.water_drop_rounded,
                   iconColor: AppColors.primary,
                   title: 'Pengingat Perkiraan Haid',
-                  description: 'Notifikasi H-2 sebelum perkiraan menstruasi dimulai agar kamu selalu siap.',
+                  description:
+                      'Notifikasi H-2 sebelum perkiraan menstruasi dimulai agar kamu selalu siap.',
                   value: _period,
                   onChanged: (val) => setState(() => _period = val),
                 ),
@@ -189,7 +192,8 @@ class _ReminderSettingsBottomSheetState extends State<ReminderSettingsBottomShee
                   icon: Icons.spa_rounded,
                   iconColor: AppColors.ovulationSolid,
                   title: 'Pengingat Masa Subur & Ovulasi',
-                  description: 'Pemberitahuan saat memasuki jendela masa subur dan hari ovulasi puncak.',
+                  description:
+                      'Pemberitahuan saat memasuki jendela masa subur dan hari ovulasi puncak.',
                   value: _fertile,
                   onChanged: (val) => setState(() => _fertile = val),
                 ),
@@ -199,7 +203,8 @@ class _ReminderSettingsBottomSheetState extends State<ReminderSettingsBottomShee
                   icon: Icons.local_drink_rounded,
                   iconColor: const Color(0xFF0288D1),
                   title: 'Pengingat Minum Air Putih',
-                  description: 'Pengingat hidrasi harian untuk menjaga metabolisme dan mencegah kram otot.',
+                  description:
+                      'Pengingat hidrasi harian untuk menjaga metabolisme dan mencegah kram otot.',
                   value: _water,
                   onChanged: (val) => setState(() => _water = val),
                 ),
@@ -209,7 +214,8 @@ class _ReminderSettingsBottomSheetState extends State<ReminderSettingsBottomShee
                   icon: Icons.cleaning_services_rounded,
                   iconColor: const Color(0xFF8E24AA),
                   title: 'Pengingat Ganti Pembalut',
-                  description: 'Notifikasi berkala untuk higienitas dan kenyamanan area kewanitaan.',
+                  description:
+                      'Notifikasi berkala untuk higienitas dan kenyamanan area kewanitaan.',
                   value: _pad,
                   onChanged: (val) => setState(() => _pad = val),
                 ),
@@ -219,7 +225,8 @@ class _ReminderSettingsBottomSheetState extends State<ReminderSettingsBottomShee
                   icon: Icons.medication_rounded,
                   iconColor: const Color(0xFF43A047),
                   title: 'Pengingat Suplemen & Zat Besi',
-                  description: 'Pengingat asupan suplemen penambah darah saat menstruasi deras.',
+                  description:
+                      'Pengingat asupan suplemen penambah darah saat menstruasi deras.',
                   value: _vitamin,
                   onChanged: (val) => setState(() => _vitamin = val),
                 ),
@@ -236,7 +243,9 @@ class _ReminderSettingsBottomSheetState extends State<ReminderSettingsBottomShee
                       foregroundColor: Colors.white,
                       elevation: 0,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusMedium,
+                        ),
                       ),
                     ),
                     child: _isSaving
@@ -245,7 +254,9 @@ class _ReminderSettingsBottomSheetState extends State<ReminderSettingsBottomShee
                             height: 20,
                             child: CircularProgressIndicator(
                               strokeWidth: 2.2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
                             ),
                           )
                         : const Row(
@@ -276,8 +287,10 @@ class _ReminderSettingsBottomSheetState extends State<ReminderSettingsBottomShee
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Notifikasi uji coba berhasil dikirim ke bilah notifikasi.'),
-                            backgroundColor: AppColors.primary,
+                            content: Text(
+                              'Notifikasi uji coba berhasil dikirim ke bilah notifikasi.',
+                            ),
+                            backgroundColor: AppColors.success,
                             behavior: SnackBarBehavior.floating,
                             duration: Duration(seconds: 2),
                           ),
@@ -286,12 +299,20 @@ class _ReminderSettingsBottomSheetState extends State<ReminderSettingsBottomShee
                     },
                     style: OutlinedButton.styleFrom(
                       foregroundColor: AppColors.primary,
-                      side: const BorderSide(color: Color(0xFFFFDDE6), width: 1.2),
+                      side: const BorderSide(
+                        color: Color(0xFFFFDDE6),
+                        width: 1.2,
+                      ),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusMedium,
+                        ),
                       ),
                     ),
-                    icon: const Icon(Icons.notifications_active_rounded, size: 18),
+                    icon: const Icon(
+                      Icons.notifications_active_rounded,
+                      size: 18,
+                    ),
                     label: const Text(
                       'Kirim Notifikasi Uji Coba',
                       style: TextStyle(
@@ -356,11 +377,7 @@ class _ReminderToggleTile extends StatelessWidget {
               color: iconColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: iconColor,
-            ),
+            child: Icon(icon, size: 20, color: iconColor),
           ),
           const SizedBox(width: AppSizes.space12),
           Expanded(

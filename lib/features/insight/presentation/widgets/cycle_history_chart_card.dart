@@ -69,19 +69,27 @@ class CycleHistoryChartCard extends StatelessWidget {
                       vertical: AppSizes.space4,
                     ),
                     decoration: BoxDecoration(
-                      color: isNormalLength ? const Color(0xFFE8F5E9) : const Color(0xFFFFF3E0),
+                      color: isNormalLength
+                          ? const Color(0xFFE8F5E9)
+                          : const Color(0xFFFFF3E0),
                       borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
                       border: Border.all(
-                        color: isNormalLength ? const Color(0xFFC8E6C9) : const Color(0xFFFFE0B2),
+                        color: isNormalLength
+                            ? const Color(0xFFC8E6C9)
+                            : const Color(0xFFFFE0B2),
                         width: 0.8,
                       ),
                     ),
                     child: Text(
-                      isNormalLength ? 'Rentang Medis Normal' : 'Perlu Pemantauan',
+                      isNormalLength
+                          ? 'Rentang Medis Normal'
+                          : 'Perlu Pemantauan',
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: isNormalLength ? const Color(0xFF2E7D32) : const Color(0xFFE65100),
+                        color: isNormalLength
+                            ? const Color(0xFF2E7D32)
+                            : const Color(0xFFE65100),
                       ),
                     ),
                   ),
@@ -173,14 +181,18 @@ class CycleHistoryChartCard extends StatelessWidget {
               const SizedBox(height: AppSizes.space8),
               _PhaseDetailRow(
                 dotColor: AppColors.ovulationSolid,
-                phaseTitle: 'Masa Subur & Ovulasi (Hari $fertileStartDay–$ovulationDay)',
-                description: 'Puncak fertilitas dan pelepasan sel telur pada hari ke-$ovulationDay.',
+                phaseTitle:
+                    'Masa Subur & Ovulasi (Hari $fertileStartDay–$ovulationDay)',
+                description:
+                    'Puncak fertilitas dan pelepasan sel telur pada hari ke-$ovulationDay.',
               ),
               const SizedBox(height: AppSizes.space8),
               _PhaseDetailRow(
                 dotColor: const Color(0xFFFFD6E3),
-                phaseTitle: 'Fase Luteal & PMS (Hari ${ovulationDay + 1}–$cycleLength)',
-                description: 'Dominasi progesteron dan persiapan siklus berikutnya.',
+                phaseTitle:
+                    'Fase Luteal & PMS (Hari ${ovulationDay + 1}–$cycleLength)',
+                description:
+                    'Dominasi progesteron dan persiapan siklus berikutnya.',
               ),
             ],
           ),
@@ -257,10 +269,7 @@ class _PhaseDetailRow extends StatelessWidget {
           width: 8,
           height: 8,
           margin: const EdgeInsets.only(top: 4),
-          decoration: BoxDecoration(
-            color: dotColor,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
         ),
         const SizedBox(width: AppSizes.space8),
         Expanded(

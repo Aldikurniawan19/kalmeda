@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:menstracker/core/constants/app_colors.dart';
 import 'package:menstracker/core/constants/app_sizes.dart';
+import 'package:menstracker/core/utils/date_formatter.dart';
 import 'package:menstracker/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:menstracker/features/home/presentation/controllers/home_controller.dart';
 
@@ -17,11 +18,21 @@ class ProfileUserCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: AuthController(),
+      animation: Listenable.merge([AuthController(), HomeController()]),
       builder: (context, _) {
-        final user = AuthController().currentUser;
-        final displayName = (user != null && user.name.isNotEmpty) ? user.name : 'Pengguna Kalmeda';
-        final displayEmail = (user != null && user.email.isNotEmpty) ? user.email : 'pengguna@kalmeda.app';
+        final authUser = AuthController().currentUser;
+        final homeProfile = HomeController().userProfile;
+        final displayName = (homeProfile != null && homeProfile.name.isNotEmpty)
+            ? homeProfile.name
+            : ((authUser != null && authUser.name.isNotEmpty) ? authUser.name : 'Pengguna Kalmeda');
+        final displayEmail = (homeProfile != null && homeProfile.email.isNotEmpty)
+            ? homeProfile.email
+            : ((authUser != null && authUser.email.isNotEmpty) ? authUser.email : 'pengguna@kalmeda.app');
+        final joinDateText = homeProfile?.createdAt != null
+            ? 'Bergabung sejak ${DateFormatter.format(homeProfile!.createdAt!)}'
+            : (authUser?.createdAt != null
+                ? 'Bergabung sejak ${DateFormatter.format(authUser!.createdAt!)}'
+                : 'Bergabung sejak 2024');
 
         return Container(
           decoration: BoxDecoration(
@@ -194,21 +205,24 @@ class ProfileUserCard extends StatelessWidget {
                       ),
                       const SizedBox(height: AppSizes.space4),
 
-                      // Account Status Row
+                      // Joined Date Row
                       Row(
-                        children: const [
-                          Icon(
-                            Icons.verified_user_outlined,
+                        children: [
+                          const Icon(
+                            Icons.calendar_today_outlined,
                             size: 13,
                             color: AppColors.primary,
                           ),
-                          SizedBox(width: AppSizes.space6),
-                          Text(
-                            'Akun Terhubung',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w400,
-                              color: AppColors.textSecondary,
+                          const SizedBox(width: AppSizes.space6),
+                          Expanded(
+                            child: Text(
+                              joinDateText,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w400,
+                                color: AppColors.textSecondary,
+                              ),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ],

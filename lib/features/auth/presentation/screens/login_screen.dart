@@ -116,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Tautan reset kata sandi telah dikirim ke $email.'),
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
         ),
       );

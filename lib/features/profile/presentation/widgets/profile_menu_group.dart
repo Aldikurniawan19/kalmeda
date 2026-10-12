@@ -91,11 +91,14 @@ class ProfileMenuGroup extends StatelessWidget {
                               ),
                             ),
                           ),
-                          const Icon(
-                            Icons.chevron_right_rounded,
-                            size: 18,
-                            color: AppColors.textSecondary,
-                          ),
+                          if (item.trailing != null)
+                            item.trailing!
+                          else
+                            const Icon(
+                              Icons.chevron_right_rounded,
+                              size: 18,
+                              color: AppColors.textSecondary,
+                            ),
                         ],
                       ),
                     ),
@@ -121,12 +124,14 @@ class ProfileMenuItemData {
   final IconData? icon;
   final String? assetIconPath;
   final String title;
+  final Widget? trailing;
   final VoidCallback? onTap;
 
   const ProfileMenuItemData({
     this.icon,
     this.assetIconPath,
     required this.title,
+    this.trailing,
     this.onTap,
   });
 }

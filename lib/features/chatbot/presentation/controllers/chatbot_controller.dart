@@ -32,11 +32,21 @@ class ChatbotController extends ChangeNotifier {
   void _initWelcomingMessage() {
     _messages.clear();
     _latestUserMessageId = null;
+    String greeting = 'Halo Kak, bagaimana kabarnya hari ini?';
+    try {
+      final user = AuthController().currentUser;
+      if (user != null && user.name.trim().isNotEmpty) {
+        final firstName = user.name.trim().split(' ').first;
+        greeting =
+            'Halo Kak ${firstName[0].toUpperCase()}${firstName.length > 1 ? firstName.substring(1) : ''}, bagaimana kabarnya hari ini?';
+      }
+    } catch (_) {}
+
     _messages.add(
       ChatMessageModel(
         id: 'welcome_msg',
         text:
-            'Halo! Saya **Konsultan Klinis Kalmeda**.\n\n'
+            '$greeting Saya **Konsultan Klinis Medis Kalmeda**.\n\n'
             '**Setiap arahan medis yang Anda terima disarikan langsung dari referensi medis terpercaya berstandar emas:**\n'
             '• **Ditinjau Pedoman Dokter Spesialis Obstetri & Ginekologi (Sp.OG)**\n'
             '• **Panduan Praktik Klinis Perkumpulan Obstetri & Ginekologi Indonesia (POGI)**\n'
@@ -102,7 +112,9 @@ class ChatbotController extends ChangeNotifier {
     UserCalendarContext? calendarContext;
     try {
       final userProfile = await ProfileRepositoryImpl().getUserProfile();
-      calendarContext = UserCalendarContext.fromUserProfile(userProfile: userProfile);
+      calendarContext = UserCalendarContext.fromUserProfile(
+        userProfile: userProfile,
+      );
       final hp = userProfile.healthProfile;
       final cp = userProfile.cycleProfile;
       final age = DateTime.now().year - userProfile.birthDate.year;
@@ -133,6 +145,7 @@ class ChatbotController extends ChangeNotifier {
       aiResult = await GeminiClinicalService()
           .generateResponse(
             clean,
+            conversationHistory: _messages,
             userName: userName,
             clinicalContext: clinicalContext,
           )
@@ -146,19 +159,25 @@ class ChatbotController extends ChangeNotifier {
         aiResult.isSuccess &&
         aiResult.text != null &&
         aiResult.text!.trim().isNotEmpty) {
+      final contextualChips =
+          ClinicalExpertSynthesizer.generateContextualQuestions(
+            clean,
+            answerText: aiResult.text,
+            symptomIndices: detectedSymptoms,
+            calendarContext: calendarContext,
+            candidateQuestions: aiResult.relatedQuestions.isNotEmpty
+                ? aiResult.relatedQuestions
+                : directMatch?.relatedChips,
+            conversationHistory: _messages,
+          );
+
       _messages.add(
         ChatMessageModel(
           id: 'bot_${DateTime.now().millisecondsSinceEpoch}',
           text: aiResult.text!.trim(),
           isUser: false,
           timestamp: DateTime.now(),
-          suggestedChips:
-              directMatch?.relatedChips ??
-              const [
-                'Berapa hari rentang siklus normal?',
-                'Cara meredakan kram perut tanpa obat',
-                'Kapan masa subur (ovulasi) terjadi?',
-              ],
+          suggestedChips: contextualChips,
           actionRoute: 'record',
           actionLabel: 'Catat Keluhan Ini di Menu Catat',
           recordNote: recordNote,
@@ -175,9 +194,20 @@ class ChatbotController extends ChangeNotifier {
       final answerText = ClinicalExpertSynthesizer.naturalizeDirectMatch(
         query: clean,
         match: directMatch,
+        conversationHistory: _messages,
         userName: userName,
         calendarContext: calendarContext,
       );
+
+      final contextualChips =
+          ClinicalExpertSynthesizer.generateContextualQuestions(
+            clean,
+            answerText: answerText,
+            symptomIndices: detectedSymptoms,
+            calendarContext: calendarContext,
+            candidateQuestions: directMatch.relatedChips,
+            conversationHistory: _messages,
+          );
 
       _messages.add(
         ChatMessageModel(
@@ -185,7 +215,7 @@ class ChatbotController extends ChangeNotifier {
           text: answerText,
           isUser: false,
           timestamp: DateTime.now(),
-          suggestedChips: directMatch.relatedChips,
+          suggestedChips: contextualChips,
           actionRoute: directMatch.actionRoute,
           actionLabel: directMatch.actionLabel,
           recordNote: directMatch.actionRoute == 'record' ? recordNote : null,
@@ -195,12 +225,217 @@ class ChatbotController extends ChangeNotifier {
     } else {
       final synthesized = ClinicalExpertSynthesizer.synthesizeResponse(
         clean,
+        conversationHistory: _messages,
         userName: userName,
         clinicalContext: clinicalContext,
         calendarContext: calendarContext,
       );
       _messages.add(synthesized);
     }
+
+    _isTyping = false;
+    notifyListeners();
+  }
+
+  /// Sends a user voice note, queries Gemini Multimodal Audio API / speech engine,
+  /// transcribes speech verbatim, and synthesizes clinical consultation answer.
+  Future<void> sendVoiceNote({
+    required int durationSeconds,
+    String? transcribedText,
+    String? base64Audio,
+    String mimeType = 'audio/m4a',
+  }) async {
+    final cleanLiveText = transcribedText?.trim() ?? '';
+    final userMsgId = 'usr_voice_${DateTime.now().millisecondsSinceEpoch}';
+    _latestUserMessageId = userMsgId;
+    final initialVoiceMsg = ChatMessageModel(
+      id: userMsgId,
+      text: cleanLiveText.isNotEmpty
+          ? cleanLiveText
+          : 'Mendengarkan dan menganalisis rekaman suara...',
+      isUser: true,
+      timestamp: DateTime.now(),
+      isVoiceNote: true,
+      voiceDurationSeconds: durationSeconds,
+    );
+    _messages.add(initialVoiceMsg);
+
+    _isTyping = true;
+    notifyListeners();
+
+    // Stage 1: Active Listening Animation Phase
+    await Future.delayed(const Duration(milliseconds: 900));
+
+    // Retrieve user's name if authenticated
+    String? userName;
+    try {
+      final user = AuthController().currentUser;
+      if (user != null && user.name.trim().isNotEmpty) {
+        userName = user.name.trim().split(' ').first;
+      }
+    } catch (_) {}
+
+    // Retrieve clinical profile context
+    String? clinicalContext;
+    UserCalendarContext? calendarContext;
+    try {
+      final userProfile = await ProfileRepositoryImpl().getUserProfile();
+      calendarContext = UserCalendarContext.fromUserProfile(
+        userProfile: userProfile,
+      );
+      final hp = userProfile.healthProfile;
+      final cp = userProfile.cycleProfile;
+      final age = DateTime.now().year - userProfile.birthDate.year;
+
+      final buffer = StringBuffer();
+      buffer.writeln(calendarContext.toPromptContext());
+      if (hp != null) {
+        buffer.writeln();
+        buffer.writeln(
+          hp.toClinicalContextString(
+            age: age,
+            cycleLength: cp.cycleLength,
+            periodDuration: cp.periodDuration,
+            regularity: cp.regularity,
+          ),
+        );
+      }
+      clinicalContext = buffer.toString().trim();
+    } catch (_) {}
+
+    String finalTranscript = cleanLiveText.isNotEmpty ? cleanLiveText : 'Pesan Suara Konsultasi';
+    String finalResponse = '';
+
+    // 2. Primary: Try Gemini Multimodal Audio if audio data is present
+    GeminiVoiceResponseResult? voiceResult;
+    if (base64Audio != null && base64Audio.trim().isNotEmpty) {
+      try {
+        voiceResult = await GeminiClinicalService()
+            .generateVoiceResponse(
+              base64Audio: base64Audio,
+              mimeType: mimeType,
+              conversationHistory: _messages,
+              speechHint: cleanLiveText.isNotEmpty ? cleanLiveText : null,
+              userName: userName,
+              clinicalContext: clinicalContext,
+            )
+            .timeout(const Duration(seconds: 45));
+      } catch (e) {
+        debugPrint('Gemini voice exception: $e');
+        voiceResult = null;
+      }
+    }
+
+    final greeting = (userName != null && userName.isNotEmpty)
+        ? 'Halo Kak $userName,'
+        : 'Halo Kak,';
+
+    if (voiceResult != null &&
+        voiceResult.isSuccess &&
+        voiceResult.responseText.trim().isNotEmpty) {
+      if (voiceResult.transcript.isNotEmpty &&
+          voiceResult.transcript != 'Pesan Suara Konsultasi') {
+        finalTranscript = voiceResult.transcript;
+      } else if (cleanLiveText.isNotEmpty) {
+        finalTranscript = cleanLiveText;
+      } else {
+        finalTranscript = 'Pesan Suara Konsultasi';
+      }
+      finalResponse = voiceResult.responseText.trim();
+    } else if (cleanLiveText.isNotEmpty) {
+      // 3. Secondary: If audio bytes failed or not available, use live speech transcript with Gemini text API
+      finalTranscript = cleanLiveText;
+      try {
+        final textResult = await GeminiClinicalService()
+            .generateResponse(
+              cleanLiveText,
+              conversationHistory: _messages,
+              userName: userName,
+              clinicalContext: clinicalContext,
+            )
+            .timeout(const Duration(seconds: 45));
+
+        if (textResult.isSuccess &&
+            textResult.text != null &&
+            textResult.text!.trim().isNotEmpty) {
+          finalResponse = textResult.text!.trim();
+        }
+      } catch (_) {}
+
+      // 4. Fallback: If Gemini API timed out/failed, use ClinicalExpertSynthesizer with the exact transcribed text
+      if (finalResponse.isEmpty) {
+        final directMatch = ClinicalKnowledgeBase.findBestMatch(cleanLiveText);
+        if (directMatch != null) {
+          finalResponse = ClinicalExpertSynthesizer.naturalizeDirectMatch(
+            query: cleanLiveText,
+            match: directMatch,
+            conversationHistory: _messages,
+            userName: userName,
+            calendarContext: calendarContext,
+          );
+        } else {
+          final synthesized = ClinicalExpertSynthesizer.synthesizeResponse(
+            cleanLiveText,
+            conversationHistory: _messages,
+            userName: userName,
+            clinicalContext: clinicalContext,
+            calendarContext: calendarContext,
+          );
+          finalResponse = synthesized.text;
+        }
+      }
+    } else if (base64Audio != null && base64Audio.trim().isNotEmpty) {
+      // Audio was recorded but Gemini service call returned an error
+      debugPrint('Gemini Voice Result Error: ${voiceResult?.errorMessage}');
+      finalTranscript = 'Pesan Suara Konsultasi';
+      finalResponse =
+          '$greeting terjadi kendala jaringan saat memproses rekaman suara. Mohon pastikan koneksi internet Kakak stabil lalu coba rekam kembali ya, atau ketikkan pertanyaan langsung di kolom chat.';
+    } else {
+      // Silent / inaudible recording
+      finalTranscript = 'Suara tidak terdengar jelas';
+      finalResponse =
+          '$greeting suara pada rekaman belum terdengar dengan jelas. Silakan tahan tombol mikrofon dan bicara lebih dekat ke ponsel ya Kak, atau ketikkan pertanyaan langsung di kolom chat.';
+    }
+
+    // Update user voice note bubble with the exact spoken transcription
+    final userMsgIndex = _messages.indexWhere((m) => m.id == userMsgId);
+    if (userMsgIndex != -1) {
+      _messages[userMsgIndex] = initialVoiceMsg.copyWith(text: finalTranscript);
+      notifyListeners();
+    }
+
+    // Stage 2: Brief natural pause before delivering doctor's response (~300ms)
+    await Future.delayed(const Duration(milliseconds: 300));
+
+    // Append consultant doctor answer
+    final detectedSymptoms = detectSymptomIndices(finalTranscript);
+    final recordNote = 'Keluhan Konsultasi Suara: $finalTranscript';
+
+    final contextualChips =
+        ClinicalExpertSynthesizer.generateContextualQuestions(
+          finalTranscript,
+          answerText: finalResponse,
+          symptomIndices: detectedSymptoms,
+          calendarContext: calendarContext,
+          candidateQuestions: voiceResult?.relatedQuestions,
+          conversationHistory: _messages,
+        );
+
+    _messages.add(
+      ChatMessageModel(
+        id: 'bot_${DateTime.now().millisecondsSinceEpoch}',
+        text: finalResponse,
+        isUser: false,
+        timestamp: DateTime.now(),
+        suggestedChips: contextualChips,
+        actionRoute: detectedSymptoms.isNotEmpty ? '/record' : null,
+        actionLabel: detectedSymptoms.isNotEmpty
+            ? 'Catat Keluhan Ini ke Jurnal Gejala'
+            : null,
+        recordNote: detectedSymptoms.isNotEmpty ? recordNote : null,
+        symptomIndices: detectedSymptoms.isNotEmpty ? detectedSymptoms : null,
+      ),
+    );
 
     _isTyping = false;
     notifyListeners();

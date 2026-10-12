@@ -23,23 +23,25 @@ class HealthProfileModel {
     this.updatedAt,
   });
 
-  /// Factory to construct [HealthProfileModel] from Firestore document map.
-  factory HealthProfileModel.fromJson(Map<String, dynamic> json) {
-    DateTime? parsedCreatedAt;
-    final createdRaw = json['createdAt'];
-    if (createdRaw is Timestamp) {
-      parsedCreatedAt = createdRaw.toDate();
-    } else if (createdRaw is String) {
-      parsedCreatedAt = DateTime.tryParse(createdRaw);
+  /// Helper to safely parse dates from Timestamp, ISO String, or epoch milliseconds.
+  static DateTime? _parseDate(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is DateTime) return raw;
+    if (raw is Timestamp) return raw.toDate();
+    if (raw is String && raw.isNotEmpty) return DateTime.tryParse(raw);
+    if (raw is num) {
+      final intVal = raw.toInt();
+      if (intVal > 10000000000) return DateTime.fromMillisecondsSinceEpoch(intVal);
+      if (intVal > 10000000) return DateTime.fromMillisecondsSinceEpoch(intVal * 1000);
+      if (intVal >= 1900 && intVal <= 2100) return DateTime(intVal, 1, 1);
     }
+    return null;
+  }
 
-    DateTime? parsedUpdatedAt;
-    final updatedRaw = json['updatedAt'];
-    if (updatedRaw is Timestamp) {
-      parsedUpdatedAt = updatedRaw.toDate();
-    } else if (updatedRaw is String) {
-      parsedUpdatedAt = DateTime.tryParse(updatedRaw);
-    }
+  /// Factory to construct [HealthProfileModel] from Firestore or local document map.
+  factory HealthProfileModel.fromJson(Map<String, dynamic> json) {
+    final parsedCreatedAt = _parseDate(json['createdAt'] ?? json['created_at']);
+    final parsedUpdatedAt = _parseDate(json['updatedAt'] ?? json['updated_at']);
 
     List<String> parseStringList(dynamic rawList, String fallback) {
       if (rawList is List) {
@@ -49,13 +51,20 @@ class HealthProfileModel {
       return [fallback];
     }
 
+    final repStatus = json['reproductiveStatus'] ?? json['reproductive_status'];
+    final menAge = json['menarcheAge'] ?? json['menarche_age'];
+    final actLevel = json['activityLevel'] ?? json['activity_level'];
+    final contra = json['contraception'];
+    final gyneco = json['gynecologicalConditions'] ?? json['gynecological_conditions'];
+    final familyHist = json['familyMedicalHistory'] ?? json['family_medical_history'];
+
     return HealthProfileModel(
-      reproductiveStatus: json['reproductiveStatus'] as String? ?? 'single',
-      menarcheAge: (json['menarcheAge'] as num?)?.toInt(),
-      activityLevel: json['activityLevel'] as String? ?? 'moderate',
-      contraception: json['contraception'] as String? ?? 'none',
-      gynecologicalConditions: parseStringList(json['gynecologicalConditions'], 'none'),
-      familyMedicalHistory: parseStringList(json['familyMedicalHistory'], 'none'),
+      reproductiveStatus: repStatus is String && repStatus.isNotEmpty ? repStatus : 'single',
+      menarcheAge: (menAge as num?)?.toInt(),
+      activityLevel: actLevel is String && actLevel.isNotEmpty ? actLevel : 'moderate',
+      contraception: contra is String && contra.isNotEmpty ? contra : 'none',
+      gynecologicalConditions: parseStringList(gyneco, 'none'),
+      familyMedicalHistory: parseStringList(familyHist, 'none'),
       createdAt: parsedCreatedAt,
       updatedAt: parsedUpdatedAt,
     );
@@ -72,6 +81,20 @@ class HealthProfileModel {
       'familyMedicalHistory': familyMedicalHistory,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
+    };
+  }
+
+  /// Converts this model into a standard JSON-serializable Map for local SharedPreferences cache.
+  Map<String, dynamic> toLocalMap() {
+    return {
+      'reproductiveStatus': reproductiveStatus,
+      'menarcheAge': menarcheAge,
+      'activityLevel': activityLevel,
+      'contraception': contraception,
+      'gynecologicalConditions': gynecologicalConditions,
+      'familyMedicalHistory': familyMedicalHistory,
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
     };
   }
 

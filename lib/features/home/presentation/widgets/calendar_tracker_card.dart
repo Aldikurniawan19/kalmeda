@@ -26,7 +26,8 @@ class CalendarTrackerCard extends StatelessWidget {
         final displayedMonth = controller.displayedMonth;
         final selectedDate = controller.selectedDate;
 
-        final profile = controller.userProfile?.cycleProfile ??
+        final profile =
+            controller.userProfile?.cycleProfile ??
             CycleProfileModel(
               trackingGoal: 'predict_period',
               lastPeriodDate: DateTime.now().subtract(const Duration(days: 7)),
@@ -54,12 +55,24 @@ class CalendarTrackerCard extends StatelessWidget {
         );
 
         // Days in month calculation
-        final firstDayOfMonth = DateTime(displayedMonth.year, displayedMonth.month, 1);
-        final daysInMonth = DateTime(displayedMonth.year, displayedMonth.month + 1, 0).day;
+        final firstDayOfMonth = DateTime(
+          displayedMonth.year,
+          displayedMonth.month,
+          1,
+        );
+        final daysInMonth = DateTime(
+          displayedMonth.year,
+          displayedMonth.month + 1,
+          0,
+        ).day;
         // Weekday: 1 (Mon) to 7 (Sun)
         final startingWeekday = firstDayOfMonth.weekday; // 1 = Monday
 
-        final prevMonthLastDay = DateTime(displayedMonth.year, displayedMonth.month, 0).day;
+        final prevMonthLastDay = DateTime(
+          displayedMonth.year,
+          displayedMonth.month,
+          0,
+        ).day;
         final leadingDays = startingWeekday - 1;
 
         final totalCells = ((leadingDays + daysInMonth + 6) ~/ 7) * 7;
@@ -97,7 +110,9 @@ class CalendarTrackerCard extends StatelessWidget {
                     children: [
                       InkWell(
                         onTap: () => controller.changeMonth(-1),
-                        borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusSmall,
+                        ),
                         child: const Padding(
                           padding: EdgeInsets.all(AppSizes.space4),
                           child: Icon(
@@ -110,7 +125,9 @@ class CalendarTrackerCard extends StatelessWidget {
                       const SizedBox(width: AppSizes.space4),
                       InkWell(
                         onTap: () => controller.jumpToToday(),
-                        borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusSmall,
+                        ),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: AppSizes.space8,
@@ -118,7 +135,9 @@ class CalendarTrackerCard extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFFFF0F5),
-                            borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                            borderRadius: BorderRadius.circular(
+                              AppSizes.radiusSmall,
+                            ),
                           ),
                           child: const Text(
                             'Hari ini',
@@ -133,7 +152,9 @@ class CalendarTrackerCard extends StatelessWidget {
                       const SizedBox(width: AppSizes.space4),
                       InkWell(
                         onTap: () => controller.changeMonth(1),
-                        borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                        borderRadius: BorderRadius.circular(
+                          AppSizes.radiusSmall,
+                        ),
                         child: const Padding(
                           padding: EdgeInsets.all(AppSizes.space4),
                           child: Icon(
@@ -180,21 +201,40 @@ class CalendarTrackerCard extends StatelessWidget {
                   bool isOutsideMonth = false;
 
                   if (index < leadingDays) {
-                    final dayNumber = prevMonthLastDay - (leadingDays - index - 1);
-                    cellDate = DateTime(displayedMonth.year, displayedMonth.month - 1, dayNumber);
+                    final dayNumber =
+                        prevMonthLastDay - (leadingDays - index - 1);
+                    cellDate = DateTime(
+                      displayedMonth.year,
+                      displayedMonth.month - 1,
+                      dayNumber,
+                    );
                     isOutsideMonth = true;
                   } else if (index >= leadingDays + daysInMonth) {
                     final dayNumber = index - (leadingDays + daysInMonth) + 1;
-                    cellDate = DateTime(displayedMonth.year, displayedMonth.month + 1, dayNumber);
+                    cellDate = DateTime(
+                      displayedMonth.year,
+                      displayedMonth.month + 1,
+                      dayNumber,
+                    );
                     isOutsideMonth = true;
                   } else {
                     final dayNumber = index - leadingDays + 1;
-                    cellDate = DateTime(displayedMonth.year, displayedMonth.month, dayNumber);
+                    cellDate = DateTime(
+                      displayedMonth.year,
+                      displayedMonth.month,
+                      dayNumber,
+                    );
                   }
 
                   final normalizedDate = DateFormatter.dateOnly(cellDate);
-                  final isSelected = DateFormatter.isSameDay(normalizedDate, selectedDate);
-                  final isToday = DateFormatter.isSameDay(normalizedDate, DateTime.now());
+                  final isSelected = DateFormatter.isSameDay(
+                    normalizedDate,
+                    selectedDate,
+                  );
+                  final isToday = DateFormatter.isSameDay(
+                    normalizedDate,
+                    DateTime.now(),
+                  );
 
                   final isPeriod = periodDates.contains(normalizedDate);
                   final isFertile = fertileDates.contains(normalizedDate);
@@ -225,7 +265,10 @@ class CalendarTrackerCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: const [
-                  _LegendItem(color: AppColors.periodSolid, label: 'Menstruasi'),
+                  _LegendItem(
+                    color: AppColors.periodSolid,
+                    label: 'Menstruasi',
+                  ),
                   _LegendItem(
                     color: AppColors.fertileWindowBorder,
                     label: 'Masa Subur',
@@ -295,10 +338,7 @@ class _CalendarDayCell extends StatelessWidget {
       return Center(
         child: Text(
           '${date.day}',
-          style: const TextStyle(
-            fontSize: 12,
-            color: Color(0xFFD4CFD7),
-          ),
+          style: const TextStyle(fontSize: 12, color: Color(0xFFD4CFD7)),
         ),
       );
     }
@@ -340,8 +380,11 @@ class _CalendarDayCell extends StatelessWidget {
           boxShadow: isSelected && (isPeriod || isOvulation)
               ? [
                   BoxShadow(
-                    color: (isPeriod ? AppColors.periodSolid : AppColors.ovulationSolid)
-                        .withValues(alpha: 0.35),
+                    color:
+                        (isPeriod
+                                ? AppColors.periodSolid
+                                : AppColors.ovulationSolid)
+                            .withValues(alpha: 0.35),
                     blurRadius: 6,
                     spreadRadius: 1,
                   ),
@@ -355,7 +398,12 @@ class _CalendarDayCell extends StatelessWidget {
               '${date.day}',
               style: TextStyle(
                 fontSize: 13,
-                fontWeight: (isPeriod || isOvulation || isSelected || isToday || isFertile)
+                fontWeight:
+                    (isPeriod ||
+                        isOvulation ||
+                        isSelected ||
+                        isToday ||
+                        isFertile)
                     ? FontWeight.w700
                     : FontWeight.w500,
                 color: textColor,

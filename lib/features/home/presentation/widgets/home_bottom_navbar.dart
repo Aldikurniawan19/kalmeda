@@ -94,15 +94,14 @@ class _NavButton extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSizes.space8, vertical: AppSizes.space4),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSizes.space8,
+          vertical: AppSizes.space4,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 24,
-              color: color,
-            ),
+            Icon(icon, size: 24, color: color),
             const SizedBox(height: AppSizes.space4),
             Text(
               label,
@@ -123,10 +122,7 @@ class _CenterActionButton extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _CenterActionButton({
-    required this.label,
-    required this.onTap,
-  });
+  const _CenterActionButton({required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -143,10 +139,7 @@ class _CenterActionButton extends StatelessWidget {
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFFF628B),
-                  Color(0xFFFF4876),
-                ],
+                colors: [Color(0xFFFF628B), Color(0xFFFF4876)],
               ),
               shape: BoxShape.circle,
               boxShadow: [

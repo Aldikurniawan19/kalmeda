@@ -7,8 +7,10 @@ import 'package:menstracker/core/utils/date_formatter.dart';
 import 'package:menstracker/features/auth/presentation/controllers/auth_controller.dart';
 import 'package:menstracker/features/home/presentation/controllers/home_controller.dart';
 import 'package:menstracker/features/home/presentation/widgets/home_bottom_navbar.dart';
-import 'package:menstracker/features/record/data/datasources/record_remote_data_source.dart';
+import 'package:menstracker/core/error/exceptions.dart';
 import 'package:menstracker/features/record/data/models/cycle_record_model.dart';
+import 'package:menstracker/features/record/data/repositories/record_repository_impl.dart';
+import 'package:menstracker/features/record/domain/repositories/record_repository.dart';
 import 'package:menstracker/features/record/presentation/controllers/daily_checkin_service.dart';
 import 'package:menstracker/features/record/presentation/controllers/record_draft_service.dart';
 import 'package:menstracker/features/record/presentation/widgets/flow_selector_section.dart';
@@ -41,7 +43,7 @@ class RecordScreen extends StatefulWidget {
 }
 
 class _RecordScreenState extends State<RecordScreen> {
-  final _recordDataSource = RecordRemoteDataSourceImpl();
+  final RecordRepository _recordRepository = RecordRepositoryImpl();
   DateTime get _currentDate => DateTime.now();
 
   int _currentNavIndex = 2;
@@ -123,7 +125,7 @@ class _RecordScreenState extends State<RecordScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Keluhan dari sesi konsultasi berhasil dicatat.'),
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
           duration: Duration(seconds: 3),
         ),
@@ -231,7 +233,7 @@ class _RecordScreenState extends State<RecordScreen> {
         createdAt: DateTime.now(),
       );
 
-      await _recordDataSource.saveRecord(record);
+      await _recordRepository.saveRecord(record);
       DailyCheckinService().markCurrentSlotCompleted();
       DailyCheckinService().syncDailyInactivityNotification();
       await HomeController().loadData();
@@ -241,7 +243,7 @@ class _RecordScreenState extends State<RecordScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Catatan harian dan analisis kesehatan berhasil diperbarui.'),
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -253,9 +255,12 @@ class _RecordScreenState extends State<RecordScreen> {
       _handleNavTapped(0);
     } catch (e) {
       if (!mounted) return;
+      final errorMessage = e is AppException
+          ? e.message
+          : 'Terjadi kendala saat menyimpan catatan. Silakan coba kembali.';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Gagal menyimpan catatan: $e'),
+          content: Text(errorMessage),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
         ),

@@ -4,50 +4,9 @@ import 'package:menstracker/core/constants/app_sizes.dart';
 import 'package:menstracker/core/utils/date_formatter.dart';
 import 'package:menstracker/features/home/presentation/controllers/home_controller.dart';
 
-/// Card for confirming or adjusting the exact start date of menstruation in real-time.
+/// Card for confirming whether menstruation has started (Sudah / Belum) starting H-2 from predicted date.
 class PeriodStartConfirmCard extends StatelessWidget {
   const PeriodStartConfirmCard({super.key});
-
-  Future<void> _handleCustomDatePick(BuildContext context, HomeController controller) async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: now,
-      firstDate: now.subtract(const Duration(days: 30)),
-      lastDate: now.add(const Duration(days: 7)),
-      helpText: 'Pilih Tanggal Mulai Menstruasi',
-      confirmText: 'Konfirmasi',
-      cancelText: 'Batal',
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: AppColors.textPrimary,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (picked != null && context.mounted) {
-      final success = await controller.confirmPeriodStarted(picked);
-      if (success && context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Tanggal haid berhasil disesuaikan ke ${DateFormatter.format(picked, includeDayName: true)}. Seluruh perkiraan siklus otomatis diperbarui.',
-            ),
-            backgroundColor: AppColors.primary,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +16,9 @@ class PeriodStartConfirmCard extends StatelessWidget {
         final controller = HomeController();
         final overview = controller.cycleOverview;
 
-        if (overview == null || !overview.isPeriodStartConfirmationDue || controller.isConfirmationDismissed) {
+        if (overview == null ||
+            !overview.isPeriodStartConfirmationDue ||
+            controller.isConfirmationDismissed) {
           return const SizedBox.shrink();
         }
 
@@ -101,7 +62,7 @@ class PeriodStartConfirmCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Konfirmasi Tanggal Menstruasi',
+                          'Konfirmasi Menstruasi',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
@@ -110,10 +71,11 @@ class PeriodStartConfirmCard extends StatelessWidget {
                         ),
                         SizedBox(height: 2),
                         Text(
-                          'Apakah menstruasimu sudah tiba sesuai perkiraan?',
+                          'Apakah menstruasi Anda sudah dimulai hari ini?',
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 11.5,
                             color: AppColors.textSecondary,
+                            height: 1.3,
                           ),
                         ),
                       ],
@@ -133,19 +95,45 @@ class PeriodStartConfirmCard extends StatelessWidget {
               ),
               const SizedBox(height: AppSizes.space14),
 
-              // Action Buttons Row
+              // Action Buttons Row: Belum & Sudah
               Row(
                 children: [
-                  // Button 1: Ya, Mulai Hari Ini
+                  // Button 1: Belum
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => controller.dismissConfirmation(),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.textSecondary,
+                        side: const BorderSide(color: Color(0xFFFFB8CC)),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text(
+                        'Belum',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSizes.space10),
+
+                  // Button 2: Sudah
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () async {
-                        final success = await controller.confirmPeriodStarted(DateTime.now());
+                        final now = DateTime.now();
+                        final success = await controller.confirmPeriodStarted(now);
                         if (success && context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Siklus baru dimulai hari ini. Semua perkiraan otomatis diperbarui.'),
-                              backgroundColor: AppColors.primary,
+                            SnackBar(
+                              content: Text(
+                                'Hari pertama menstruasi dicatat: ${DateFormatter.format(now, includeDayName: true)}. Perkiraan siklus telah diperbarui.',
+                              ),
+                              backgroundColor: AppColors.success,
                               behavior: SnackBarBehavior.floating,
                             ),
                           );
@@ -161,33 +149,10 @@ class PeriodStartConfirmCard extends StatelessWidget {
                         ),
                       ),
                       child: const Text(
-                        'Ya, Mulai Hari Ini',
+                        'Sudah',
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 12.5,
                           fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSizes.space10),
-
-                  // Button 2: Pilih Tanggal Lain
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => _handleCustomDatePick(context, controller),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        side: const BorderSide(color: Color(0xFFFF9EB5)),
-                        padding: const EdgeInsets.symmetric(vertical: 10),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: const Text(
-                        'Pilih Tanggal Lain',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),

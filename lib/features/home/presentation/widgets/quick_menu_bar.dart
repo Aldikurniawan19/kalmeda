@@ -91,7 +91,10 @@ class _MenuItem extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSizes.space6, vertical: AppSizes.space4),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSizes.space6,
+            vertical: AppSizes.space4,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -103,10 +106,7 @@ class _MenuItem extends StatelessWidget {
                   color: backgroundColor,
                   borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
                 ),
-                child: Image.asset(
-                  iconPath,
-                  fit: BoxFit.contain,
-                ),
+                child: Image.asset(iconPath, fit: BoxFit.contain),
               ),
               const SizedBox(height: AppSizes.space8),
               Text(

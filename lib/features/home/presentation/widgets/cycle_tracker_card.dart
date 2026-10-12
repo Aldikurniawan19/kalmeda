@@ -12,10 +12,7 @@ import 'package:menstracker/features/home/presentation/controllers/home_controll
 class CycleTrackerCard extends StatelessWidget {
   final VoidCallback? onRecordTap;
 
-  const CycleTrackerCard({
-    super.key,
-    this.onRecordTap,
-  });
+  const CycleTrackerCard({super.key, this.onRecordTap});
 
   @override
   Widget build(BuildContext context) {
@@ -27,13 +24,16 @@ class CycleTrackerCard extends StatelessWidget {
 
         final currentCycleDay = overview?.currentCycleDay ?? 1;
         final totalCycleLength = overview?.cycleLength ?? 28;
-        final progressFraction = overview?.progressFraction ?? (currentCycleDay / totalCycleLength);
+        final progressFraction =
+            overview?.progressFraction ?? (currentCycleDay / totalCycleLength);
         final countdownTitle = overview?.countdownTitle ?? 'Menghitung...';
-        final countdownSubtitle = overview?.countdownSubtitle ?? 'siklus menstruasi';
+        final countdownSubtitle =
+            overview?.countdownSubtitle ?? 'siklus menstruasi';
         final nextPeriodText = overview != null
             ? 'Perkiraan: ${DateFormatter.format(overview.nextPeriodDate)}'
             : 'Perkiraan: -';
-        final phaseName = overview?.currentDayInfo.phaseName ?? 'Fase Menstruasi';
+        final phaseName =
+            overview?.currentDayInfo.phaseName ?? 'Fase Menstruasi';
 
         // Dynamic accessible badge colors to ensure readable text contrast on all phases
         final isOvulation = overview?.currentPhase == CyclePhase.ovulation;
@@ -41,18 +41,18 @@ class CycleTrackerCard extends StatelessWidget {
         final badgeColor = isOvulation
             ? AppColors.ovulationSolid
             : isFertile
-                ? AppColors.fertileWindowText
-                : AppColors.primary;
+            ? AppColors.fertileWindowText
+            : AppColors.primary;
         final badgeBg = isOvulation
             ? AppColors.ovulationSoft
             : isFertile
-                ? AppColors.fertileWindowBg
-                : const Color(0xFFFFEDF2);
+            ? AppColors.fertileWindowBg
+            : const Color(0xFFFFEDF2);
         final badgeBorder = isOvulation
             ? const Color(0xFFDDD6FE)
             : isFertile
-                ? AppColors.fertileWindowBorder
-                : const Color(0xFFFFD4E2);
+            ? AppColors.fertileWindowBorder
+            : const Color(0xFFFFD4E2);
 
         return Container(
           decoration: BoxDecoration(
@@ -62,10 +62,7 @@ class CycleTrackerCard extends StatelessWidget {
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Color(0xFFFFF4F7),
-                Color(0xFFFFFFFF),
-              ],
+              colors: [Color(0xFFFFF4F7), Color(0xFFFFFFFF)],
             ),
             boxShadow: [
               BoxShadow(
@@ -97,7 +94,9 @@ class CycleTrackerCard extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color: badgeBg,
-                              borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                              borderRadius: BorderRadius.circular(
+                                AppSizes.radiusSmall,
+                              ),
                               border: Border.all(
                                 color: badgeBorder,
                                 width: 1.0,
@@ -188,7 +187,9 @@ class CycleTrackerCard extends StatelessWidget {
                             color: Colors.transparent,
                             child: InkWell(
                               onTap: onRecordTap ?? () {},
-                              borderRadius: BorderRadius.circular(AppSizes.radiusCircular),
+                              borderRadius: BorderRadius.circular(
+                                AppSizes.radiusCircular,
+                              ),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: AppSizes.space12,
@@ -201,10 +202,14 @@ class CycleTrackerCard extends StatelessWidget {
                                       Color(0xFFFF6F93),
                                     ],
                                   ),
-                                  borderRadius: BorderRadius.circular(AppSizes.radiusCircular),
+                                  borderRadius: BorderRadius.circular(
+                                    AppSizes.radiusCircular,
+                                  ),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFFFF4D79).withValues(alpha: 0.25),
+                                      color: const Color(
+                                        0xFFFF4D79,
+                                      ).withValues(alpha: 0.25),
                                       blurRadius: 8,
                                       offset: const Offset(0, 3),
                                     ),
@@ -354,10 +359,7 @@ class _CycleProgressPainter extends CustomPainter {
       ..shader = const SweepGradient(
         startAngle: -math.pi / 2,
         endAngle: 3 * math.pi / 2,
-        colors: [
-          Color(0xFFFFA3BA),
-          Color(0xFFFF4876),
-        ],
+        colors: [Color(0xFFFFA3BA), Color(0xFFFF4876)],
       ).createShader(Rect.fromCircle(center: center, radius: radius))
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round

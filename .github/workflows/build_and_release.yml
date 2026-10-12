@@ -7,11 +7,23 @@ on:
       - master
     tags:
       - 'v*'
+      - '[0-9]+.[0-9]+.[0-9]+*'
   pull_request:
     branches:
       - main
       - master
   workflow_dispatch:
+    inputs:
+      publish_release:
+        description: 'Publish as GitHub Release?'
+        required: false
+        type: boolean
+        default: false
+      tag_name:
+        description: 'Release Tag Name (e.g. v2.0.5)'
+        required: false
+        type: string
+        default: 'v2.0.5'
 
 permissions:
   contents: write
@@ -47,7 +59,10 @@ jobs:
         run: flutter analyze
 
       - name: Run Unit Tests
-        run: flutter test test/core/services/notification_reminder_test.dart
+        run: |
+          flutter test test/core/services/notification_reminder_test.dart
+          flutter test test/core/services/cycle_engine_service_test.dart
+          flutter test test/features/app_update/app_update_test.dart
 
       - name: Build Android Release APK
         run: flutter build apk --release
@@ -72,13 +87,15 @@ jobs:
           retention-days: 30
 
       - name: Publish to GitHub Releases
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.publish_release == true)
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || inputs.tag_name }}
+          name: Release ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || inputs.tag_name }}
           files: |
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/app-release.aab
-          name: Release ${{ github.ref_name }}
           generate_release_notes: true
           draft: false
           prerelease: false
+

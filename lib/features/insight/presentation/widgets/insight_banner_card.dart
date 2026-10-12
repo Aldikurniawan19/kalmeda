@@ -22,16 +22,19 @@ class InsightBannerCard extends StatelessWidget {
         switch (goal) {
           case 'fertility_ovulation':
             title = 'Fokus Kesuburan & Ovulasi';
-            subtitle = 'Pantau masa subur dan hari ovulasi untuk perencanaan kehamilan yang optimal.';
+            subtitle =
+                'Pantau masa subur dan hari ovulasi untuk perencanaan kehamilan yang optimal.';
             break;
           case 'symptom_health':
             title = 'Pantau Gejala & Kesehatan';
-            subtitle = 'Kenali pola perubahan mood, energi, dan respon fisik tubuh di setiap fase.';
+            subtitle =
+                'Kenali pola perubahan mood, energi, dan respon fisik tubuh di setiap fase.';
             break;
           case 'predict_period':
           default:
             title = 'Prediksi Menstruasi Akurat';
-            subtitle = 'Insight medis membantumu mengetahui jadwal haid mendatang dengan tepat waktu.';
+            subtitle =
+                'Insight medis membantumu mengetahui jadwal haid mendatang dengan tepat waktu.';
             break;
         }
 
@@ -43,10 +46,7 @@ class InsightBannerCard extends StatelessWidget {
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Color(0xFFFFF2F6),
-                Color(0xFFFFFFFF),
-              ],
+              colors: [Color(0xFFFFF2F6), Color(0xFFFFFFFF)],
             ),
             boxShadow: [
               BoxShadow(

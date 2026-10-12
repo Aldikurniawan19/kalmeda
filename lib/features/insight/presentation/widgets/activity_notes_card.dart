@@ -20,7 +20,9 @@ class ActivityNotesCard extends StatelessWidget {
         for (final r in records) {
           totalWater += r.waterCups;
         }
-        final avgWater = totalNotes > 0 ? (totalWater / totalNotes).toStringAsFixed(1) : '8.0';
+        final avgWater = totalNotes > 0
+            ? (totalWater / totalNotes).toStringAsFixed(1)
+            : '8.0';
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,7 +61,10 @@ class ActivityNotesCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: AppColors.cardBackground,
                       borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
-                      border: Border.all(color: AppColors.cardBorder, width: 1.0),
+                      border: Border.all(
+                        color: AppColors.cardBorder,
+                        width: 1.0,
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.03),
@@ -130,7 +135,10 @@ class ActivityNotesCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: AppColors.cardBackground,
                       borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
-                      border: Border.all(color: AppColors.cardBorder, width: 1.0),
+                      border: Border.all(
+                        color: AppColors.cardBorder,
+                        width: 1.0,
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.03),

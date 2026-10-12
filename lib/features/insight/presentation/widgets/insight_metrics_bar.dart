@@ -129,10 +129,7 @@ class _MetricItem extends StatelessWidget {
               color: bgColor,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Image.asset(
-              iconPath,
-              fit: BoxFit.contain,
-            ),
+            child: Image.asset(iconPath, fit: BoxFit.contain),
           ),
           const SizedBox(height: AppSizes.space8),
           // Auto-scaling responsive value to prevent single-character line wraps

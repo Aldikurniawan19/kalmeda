@@ -23,11 +23,18 @@ android {
 
     defaultConfig {
         applicationId = "com.menstracker"
-        minSdk = flutter.minSdkVersion
+        minSdk = flutter.minSdkVersion // Android 5.0 (Lollipop) and above
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled = true
+    }
+
+    signingConfigs {
+        getByName("debug") {
+            enableV1Signing = true
+            enableV2Signing = true
+        }
     }
 
     buildTypes {

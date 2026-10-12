@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import 'package:menstracker/core/error/failures.dart';
+import 'package:menstracker/features/auth/data/datasources/auth_local_data_source.dart';
 import 'package:menstracker/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:menstracker/features/auth/domain/entities/user_entity.dart';
 import 'package:menstracker/features/auth/domain/repositories/auth_repository.dart';
@@ -63,27 +64,48 @@ class AuthController extends ChangeNotifier {
         hasCompletedSetup: true,
         createdAt: _currentUser!.createdAt,
       );
+      AuthLocalDataSourceImpl().setSetupCompleted(true);
       notifyListeners();
+    } else {
+      AuthLocalDataSourceImpl().setSetupCompleted(true);
     }
   }
 
   /// Checks the current session on app startup.
   Future<void> checkAuthStatus() async {
     _status = AuthStatus.loading;
-    notifyListeners();
 
+    // 1. Fast-path: immediately restore cached user from local storage
+    try {
+      final cached = await AuthLocalDataSourceImpl().getCachedUser();
+      if (cached != null && cached.isNotEmpty) {
+        _currentUser = cached;
+        _status = AuthStatus.authenticated;
+        notifyListeners();
+      }
+    } catch (_) {}
+
+    // 2. Authoritative check with Firebase Auth & Firestore in the background
     try {
       final user = await _getCurrentUserUseCase.execute();
       if (user != null && user.isNotEmpty) {
         _currentUser = user;
         _status = AuthStatus.authenticated;
       } else {
-        _currentUser = null;
-        _status = AuthStatus.unauthenticated;
+        // If we already have a valid persistent local session, maintain authenticated status
+        if (_currentUser != null && _currentUser!.isNotEmpty) {
+          _status = AuthStatus.authenticated;
+        } else {
+          _currentUser = null;
+          _status = AuthStatus.unauthenticated;
+        }
       }
     } catch (_) {
-      _currentUser = null;
-      _status = AuthStatus.unauthenticated;
+      if (_currentUser == null || _currentUser!.isEmpty) {
+        _status = AuthStatus.unauthenticated;
+      } else {
+        _status = AuthStatus.authenticated;
+      }
     }
 
     notifyListeners();

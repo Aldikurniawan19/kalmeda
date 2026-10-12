@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:menstracker/core/constants/app_colors.dart';
+import 'package:menstracker/core/constants/app_info.dart';
 import 'package:menstracker/core/constants/app_sizes.dart';
+import 'package:menstracker/features/app_update/presentation/controllers/app_update_controller.dart';
 
 /// Screen presenting application information, clinical predictive methodology, medical sources, and disclaimer.
 class AboutAppScreen extends StatelessWidget {
@@ -94,19 +96,10 @@ class AboutAppScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   const Text(
-                    'Versi 1.0.0 (Build 2026)',
+                    'Versi ${AppInfo.appVersion} (Build ${AppInfo.buildNumber})',
                     style: TextStyle(
                       fontSize: 12,
                       color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Dikembangkan oleh Aldi Kurniawan & Wiyanda Susanti',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -125,6 +118,38 @@ class AboutAppScreen extends StatelessWidget {
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: AppColors.primary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSizes.space14),
+                  OutlinedButton.icon(
+                    onPressed: () =>
+                        AppUpdateController().checkUpdateManually(context),
+                    icon: const Icon(
+                      Icons.system_update_rounded,
+                      size: 16,
+                      color: AppColors.primary,
+                    ),
+                    label: const Text(
+                      'Periksa Pembaruan',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(
+                        color: Color(0xFFFFB8CC),
+                        width: 1.0,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSizes.space16,
+                        vertical: AppSizes.space8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius:
+                            BorderRadius.circular(AppSizes.radiusMedium),
                       ),
                     ),
                   ),

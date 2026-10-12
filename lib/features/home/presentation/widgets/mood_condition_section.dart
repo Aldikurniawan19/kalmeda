@@ -7,10 +7,7 @@ import 'package:menstracker/features/home/presentation/controllers/home_controll
 class MoodConditionSection extends StatelessWidget {
   final ValueChanged<int>? onMoodSelected;
 
-  const MoodConditionSection({
-    super.key,
-    this.onMoodSelected,
-  });
+  const MoodConditionSection({super.key, this.onMoodSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -113,7 +110,10 @@ class MoodConditionSection extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.cardBackground,
                   borderRadius: BorderRadius.circular(AppSizes.radiusMedium),
-                  border: Border.all(color: const Color(0xFFFFE3EC), width: 1.0),
+                  border: Border.all(
+                    color: const Color(0xFFFFE3EC),
+                    width: 1.0,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: const Color(0xFFFF4D79).withValues(alpha: 0.04),
@@ -131,7 +131,9 @@ class MoodConditionSection extends StatelessWidget {
                           padding: const EdgeInsets.all(AppSizes.space6),
                           decoration: BoxDecoration(
                             color: const Color(0xFFFFF0F5),
-                            borderRadius: BorderRadius.circular(AppSizes.radiusSmall),
+                            borderRadius: BorderRadius.circular(
+                              AppSizes.radiusSmall,
+                            ),
                           ),
                           child: const Icon(
                             Icons.spa_outlined,
@@ -235,7 +237,9 @@ class _MoodCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(18),
-          border: isSelected ? Border.all(color: AppColors.primary, width: 2.0) : null,
+          border: isSelected
+              ? Border.all(color: AppColors.primary, width: 2.0)
+              : null,
           boxShadow: isSelected
               ? [
                   BoxShadow(
@@ -249,12 +253,7 @@ class _MoodCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(
-              iconPath,
-              width: 28,
-              height: 28,
-              fit: BoxFit.contain,
-            ),
+            Image.asset(iconPath, width: 28, height: 28, fit: BoxFit.contain),
             const SizedBox(height: AppSizes.space6),
             Text(
               label,

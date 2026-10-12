@@ -107,7 +107,7 @@ class _PeriodSetupScreenState extends State<PeriodSetupScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Profil kesehatan dan siklus berhasil disimpan! Selamat datang di Kalmeda.'),
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.success,
           behavior: SnackBarBehavior.floating,
         ),
       );

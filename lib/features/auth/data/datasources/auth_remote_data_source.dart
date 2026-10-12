@@ -148,7 +148,19 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<UserModel?> getCurrentUser() async {
     try {
-      final user = _firebaseAuth.currentUser;
+      User? user = _firebaseAuth.currentUser;
+      if (user == null) {
+        // Asynchronously await initial auth token restoration from native keystore
+        try {
+          user = await _firebaseAuth.authStateChanges().first.timeout(
+            const Duration(milliseconds: 2500),
+            onTimeout: () => _firebaseAuth.currentUser,
+          );
+        } catch (_) {
+          user = _firebaseAuth.currentUser;
+        }
+      }
+
       if (user == null) return null;
 
       try {

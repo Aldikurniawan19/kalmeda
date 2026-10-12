@@ -15,8 +15,11 @@ class InsightTipCard extends StatelessWidget {
         final controller = HomeController();
         final dayInfo = controller.cycleOverview?.currentDayInfo;
 
-        final tipTitle = dayInfo != null ? 'Tips ${dayInfo.phaseName}' : 'Tahukah kamu?';
-        final tipBody = dayInfo?.nutritionTip ??
+        final tipTitle = dayInfo != null
+            ? 'Tips ${dayInfo.phaseName}'
+            : 'Tahukah kamu?';
+        final tipBody =
+            dayInfo?.nutritionTip ??
             'Tidur yang cukup, olahraga teratur, dan hidrasi yang baik membantu siklus menstruasimu tetap teratur.';
 
         return Container(

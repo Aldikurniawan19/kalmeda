@@ -1,15 +1,21 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:menstracker/core/constants/app_colors.dart';
 import 'package:menstracker/core/constants/app_sizes.dart';
 import 'package:menstracker/core/services/notification_service.dart';
+import 'package:menstracker/features/app_update/presentation/controllers/app_update_controller.dart';
 import 'package:menstracker/features/calendar/presentation/screens/calendar_screen.dart';
 import 'package:menstracker/features/home/presentation/controllers/home_controller.dart';
 import 'package:menstracker/features/home/presentation/controllers/reminder_controller.dart';
-import 'package:menstracker/features/home/presentation/widgets/cycle_history_bottom_sheet.dart';
+import 'package:menstracker/features/home/presentation/widgets/home_mascot_fab.dart';
+import 'package:menstracker/features/home/presentation/widgets/home_mascot_greeting_overlay.dart';
+import 'package:menstracker/features/home/presentation/screens/period_history_screen.dart';
 import 'package:menstracker/features/home/presentation/widgets/cycle_tracker_card.dart';
 import 'package:menstracker/features/home/presentation/widgets/home_bottom_navbar.dart';
 import 'package:menstracker/features/home/presentation/widgets/home_header.dart';
-import 'package:menstracker/features/home/presentation/widgets/mood_condition_section.dart';
+import 'package:menstracker/features/home/presentation/widgets/previous_period_section.dart';
+import 'package:menstracker/features/home/presentation/widgets/daily_health_guidance_card.dart';
 import 'package:menstracker/features/home/presentation/widgets/period_active_checkin_card.dart';
 import 'package:menstracker/features/home/presentation/widgets/period_start_confirm_card.dart';
 import 'package:menstracker/features/home/presentation/widgets/quick_menu_bar.dart';
@@ -32,6 +38,11 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   int _currentNavIndex = 0;
+  bool _isFabExtended = false;
+  bool _showGreetingOverlay = true;
+  final GlobalKey _mascotFabKey = GlobalKey();
+  Timer? _fabExpandTimer;
+  Timer? _fabCollapseTimer;
 
   @override
   void initState() {
@@ -51,12 +62,41 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     DailyCheckinService().syncDailyInactivityNotification();
 
     // Listen for notification tap payloads (e.g. open_record)
-    NotificationService.onNotificationPayload.addListener(_handleNotificationPayload);
+    NotificationService.onNotificationPayload.addListener(
+      _handleNotificationPayload,
+    );
     _handleNotificationPayload();
 
     // Check mandatory daily condition check-in prompt after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _checkDailyPrompt();
+      AppUpdateController().checkAndPromptSilently(context);
+    });
+
+    // Animate Tanya Kalmeda button: start as circle, expand after 1s, then collapse back after 4s
+    _startFabAnimationSequence();
+  }
+
+  void _startFabAnimationSequence() {
+    _fabExpandTimer?.cancel();
+    _fabCollapseTimer?.cancel();
+
+    // 1. Setelah 1 detik, munculkan kata "Tanya Kalmeda"
+    _fabExpandTimer = Timer(const Duration(seconds: 1), () {
+      if (mounted) {
+        setState(() {
+          _isFabExtended = true;
+        });
+
+        // 2. Tampilkan selama 4 detik, lalu kembalikan menjadi hanya icon
+        _fabCollapseTimer = Timer(const Duration(seconds: 4), () {
+          if (mounted) {
+            setState(() {
+              _isFabExtended = false;
+            });
+          }
+        });
+      }
     });
   }
 
@@ -67,6 +107,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
       ReminderController().recordAppOpened();
       DailyCheckinService().syncDailyInactivityNotification();
       _checkDailyPrompt();
+      AppUpdateController().checkAndPromptSilently(context);
     } else if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached ||
         state == AppLifecycleState.hidden) {
@@ -93,9 +134,27 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   void dispose() {
+    _fabExpandTimer?.cancel();
+    _fabCollapseTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
-    NotificationService.onNotificationPayload.removeListener(_handleNotificationPayload);
+    NotificationService.onNotificationPayload.removeListener(
+      _handleNotificationPayload,
+    );
     super.dispose();
+  }
+
+  void _openChatbot() {
+    Offset? fabPos;
+    final renderBox =
+        _mascotFabKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox != null && renderBox.hasSize) {
+      fabPos = renderBox.localToGlobal(const Offset(31, 31));
+    }
+    ChatbotScreen.open(
+      context,
+      onNavigateTab: _onNavTapped,
+      initialFabPosition: fabPos,
+    );
   }
 
   void _onNavTapped(int index) {
@@ -129,20 +188,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             const PeriodStartConfirmCard(),
 
             // 2. Current cycle progress card with countdown & flower
-            CycleTrackerCard(
-              onRecordTap: () => _onNavTapped(2),
-            ),
+            CycleTrackerCard(onRecordTap: () => _onNavTapped(2)),
             const SizedBox(height: AppSizes.space16),
 
             // 3. Active Period Daily Check-in & Clinical Guidance
-            PeriodActiveCheckinCard(
-              onRecordTap: () => _onNavTapped(2),
-            ),
+            PeriodActiveCheckinCard(onRecordTap: () => _onNavTapped(2)),
 
             // 4. 4-item interactive quick navigation menu
             QuickMenuBar(
               onKalenderTap: () => _onNavTapped(1),
-              onRiwayatTap: () => CycleHistoryBottomSheet.show(
+              onRiwayatTap: () => PeriodHistoryScreen.open(
                 context,
                 onAddRecord: () => _onNavTapped(2),
               ),
@@ -154,11 +209,13 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
             const SizedBox(height: AppSizes.space24),
 
-            // 5. Mood and conditions daily chips + clinical health advice
-            MoodConditionSection(
-              onMoodSelected: (_) => _onNavTapped(2),
-            ),
-            const SizedBox(height: AppSizes.space32),
+            // 5. Previous month's period history & cycle metrics
+            PreviousPeriodSection(onAddRecordTap: () => _onNavTapped(2)),
+            const SizedBox(height: AppSizes.space24),
+
+            // 6. Clinical food, activity, and relaxation guidance for today
+            const DailyHealthGuidanceCard(),
+            const SizedBox(height: 96),
           ],
         ),
       ),
@@ -167,57 +224,50 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground,
-      // WhatsApp-style tab switching: instant, keeps state alive, no horizontal sliding or reloading
-      body: IndexedStack(
-        index: _currentNavIndex,
-        children: [
-          _buildHomeTab(),
-          CalendarScreen(
-            onNavTapped: _onNavTapped,
-            showBottomNav: false,
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: AppColors.scaffoldBackground,
+          // WhatsApp-style tab switching: instant, keeps state alive, no horizontal sliding or reloading
+          body: IndexedStack(
+            index: _currentNavIndex,
+            children: [
+              _buildHomeTab(),
+              CalendarScreen(onNavTapped: _onNavTapped, showBottomNav: false),
+              RecordScreen(onNavTapped: _onNavTapped, showBottomNav: false),
+              InsightScreen(onNavTapped: _onNavTapped, showBottomNav: false),
+              ProfileScreen(onNavTapped: _onNavTapped, showBottomNav: false),
+            ],
           ),
-          RecordScreen(
-            onNavTapped: _onNavTapped,
-            showBottomNav: false,
+          // Floating Mascot Assistant Button replacing old chatbot button
+          floatingActionButton: _currentNavIndex == 0
+              ? HomeMascotFab(
+                  fabKey: _mascotFabKey,
+                  isExtended: _isFabExtended,
+                  isVisible: !_showGreetingOverlay,
+                  onTap: _openChatbot,
+                )
+              : null,
+          // Fixed static bottom navbar
+          bottomNavigationBar: HomeBottomNavbar(
+            selectedIndex: _currentNavIndex,
+            onItemTapped: _onNavTapped,
           ),
-          InsightScreen(
-            onNavTapped: _onNavTapped,
-            showBottomNav: false,
+        ),
+
+        // Centered Greeting Overlay on App Launch that swoops into the Mascot FAB
+        if (_showGreetingOverlay)
+          HomeMascotGreetingOverlay(
+            targetFabGlobalKey: _mascotFabKey,
+            onDismissed: () {
+              if (mounted) {
+                setState(() {
+                  _showGreetingOverlay = false;
+                });
+              }
+            },
           ),
-          ProfileScreen(
-            onNavTapped: _onNavTapped,
-            showBottomNav: false,
-          ),
-        ],
-      ),
-      // Floating Assistant Button for instant clinical consultation
-      floatingActionButton: _currentNavIndex == 0
-          ? FloatingActionButton.extended(
-              onPressed: () => ChatbotScreen.open(context, onNavigateTab: _onNavTapped),
-              backgroundColor: AppColors.primary,
-              foregroundColor: AppColors.textWhite,
-              elevation: 4,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(24),
-              ),
-              icon: const Icon(Icons.support_agent_rounded, size: 20),
-              label: const Text(
-                'Tanya Kalmeda',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.2,
-                ),
-              ),
-            )
-          : null,
-      // Fixed static bottom navbar
-      bottomNavigationBar: HomeBottomNavbar(
-        selectedIndex: _currentNavIndex,
-        onItemTapped: _onNavTapped,
-      ),
+      ],
     );
   }
 }
